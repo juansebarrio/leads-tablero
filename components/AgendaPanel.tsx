@@ -52,14 +52,17 @@ export function AgendaPanel({ events, cierreMes }: AgendaPanelProps) {
     <aside
       className={`
         bg-panel border-l border-line p-[22px] pt-7 overflow-y-auto
-        fixed top-0 right-0 w-[320px] max-w-[90vw] h-screen z-70
-        transition-transform duration-250 ease-in-out
-        ${agendaOpen ? "translate-x-0" : "translate-x-full"}
-        xl:static xl:translate-x-0 xl:w-[280px] xl:h-screen xl:sticky xl:top-0
-        xl:shadow-none shadow-[-8px_0_32px_rgba(14,14,18,0.08)]
+
+        /* xl (≥1280px): grid item normal del DashboardLayout, sticky a top */
+        xl:sticky xl:top-0 xl:h-screen xl:w-full xl:translate-x-0 xl:shadow-none xl:z-auto
+
+        /* sub-xl: drawer fixed a la derecha, oculto si !agendaOpen */
+        max-xl:fixed max-xl:top-0 max-xl:right-0 max-xl:w-[320px] max-xl:max-w-[90vw]
+        max-xl:h-screen max-xl:z-[70] max-xl:transition-transform max-xl:duration-250 max-xl:ease-in-out
+        max-xl:shadow-[-8px_0_32px_rgba(14,14,18,0.08)]
+        ${agendaOpen ? "max-xl:translate-x-0" : "max-xl:translate-x-full"}
         max-md:w-full max-md:max-w-[360px]
       `}
-      style={{ zIndex: 70 }}
     >
       <div
         className="font-display font-medium text-lg -tracking-[0.015em] mb-1"

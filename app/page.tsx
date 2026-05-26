@@ -1,5 +1,4 @@
 import { AIInsight } from "@/components/AIInsight";
-import { AgendaTrigger } from "@/components/AgendaTrigger";
 import { DashboardHero } from "@/components/DashboardHero";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { ErrorView, PasosConfigSupabase } from "@/components/ErrorView";
@@ -81,7 +80,6 @@ export default async function Page() {
         nombreComercial={currentUser.nombre.split(" ")[0]}
         cantidadFrios={cantidadFrios}
         cantidadReuniones={cantidadAgenda}
-        agendaTrigger={<AgendaTrigger count={cantidadAgenda} />}
         nuevoLeadTrigger={<NuevoLeadLauncher />}
       />
 

@@ -1,4 +1,5 @@
 import { AgendaPanel } from "@/components/AgendaPanel";
+import { AgendaTrigger } from "@/components/AgendaTrigger";
 import { Backdrop } from "@/components/Backdrop";
 import { DrawerProvider } from "@/components/drawer-context";
 import { SidebarLeft, type SidebarCounts } from "@/components/SidebarLeft";
@@ -33,6 +34,7 @@ export function DashboardLayout({
   return (
     <DrawerProvider>
       <TopbarMobile agendaCount={agendaEvents.length} />
+      <AgendaTrigger count={agendaEvents.length} />
       <Backdrop />
       <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] xl:grid-cols-[220px_1fr_280px] min-h-screen">
         <SidebarLeft counts={sidebarCounts} currentUser={currentUser} />

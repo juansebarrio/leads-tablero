@@ -2,7 +2,6 @@
 
 import {
   BarChart3,
-  Calendar,
   CheckCircle2,
   Clock,
   FileText,
@@ -46,25 +45,11 @@ type NavItem = {
 };
 
 export function SidebarLeft({ counts = {}, currentUser }: SidebarLeftProps) {
-  const { sidebarOpen, closeAll, openAgenda } = useDrawers();
+  const { sidebarOpen, closeAll } = useDrawers();
   const pathname = usePathname();
 
-  // En xl (≥1280px) el AgendaPanel ya está sticky a la derecha. Si el botón
-  // "Agenda" del sidebar abriera el drawer, sería redundante. Hacemos no-op
-  // en xl (igual el panel está visible).
-  const handleAgendaClick = () => {
-    if (
-      typeof window !== "undefined" &&
-      window.matchMedia("(min-width: 1280px)").matches
-    ) {
-      return; // panel ya visible
-    }
-    openAgenda();
-  };
-
-  // Una sola lista: primero los items navegables (Atender hoy / Agenda /
-  // Pipeline), después los sub-estados del pipeline como info subordinada.
-  // La sección "Inteligencia" sigue temporalmente oculta.
+  // El acceso a "Agenda" vive en el botón flotante de la esquina sup-der
+  // (AgendaTrigger / TopbarMobile), no acá. Ver DashboardLayout.
   const items: NavItem[] = [
     {
       label: "Atender hoy",
@@ -72,12 +57,6 @@ export function SidebarLeft({ counts = {}, currentUser }: SidebarLeftProps) {
       count: counts.atenderHoy ?? 0,
       alert: true,
       href: "/",
-    },
-    {
-      label: "Agenda",
-      icon: Calendar,
-      count: counts.agenda ?? 0,
-      onClick: handleAgendaClick,
     },
     { label: "Equipo", icon: Users, href: "/equipo" },
     {
