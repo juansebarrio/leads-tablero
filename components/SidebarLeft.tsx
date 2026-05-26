@@ -8,6 +8,7 @@ import {
   MessageSquare,
   Search,
   Target,
+  TrendingUp,
   Users,
   type LucideIcon,
 } from "lucide-react";
@@ -60,6 +61,7 @@ export function SidebarLeft({ counts = {}, currentUser }: SidebarLeftProps) {
       href: "/",
     },
     { label: "Equipo", icon: Users, href: "/equipo" },
+    { label: "Conversión", icon: TrendingUp, href: "/conversion" },
     {
       label: "Pipeline",
       icon: BarChart3,

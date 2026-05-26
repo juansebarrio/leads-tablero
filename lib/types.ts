@@ -128,3 +128,30 @@ export type PatronIa = {
   desde: string;
   hasta: string;
 };
+
+// /conversion
+
+export type FunnelData = {
+  nuevos_total: number;
+  conversacion_acum: number;
+  propuesta_acum: number;
+  cierre_acum: number;
+  ganados: number;
+  valor_ganado: number;
+};
+
+export type TimingItem = {
+  estado_from: string; // 'inicio' | 'nuevo' | 'conversacion' | 'propuesta' | 'cierre'
+  estado_to: string; // 'conversacion' | 'propuesta' | 'cierre' | 'ganado'
+  cantidad_transiciones: number;
+  dias_promedio: number;
+};
+
+export type TrendPoint = {
+  meses_atras: number;
+  mes: string; // ISO date "2026-05-01T00:00:00..."
+  creados: number;
+  ganados: number;
+};
+
+export type PeriodoConversion = "mes_actual" | "mes_anterior" | "trimestre";

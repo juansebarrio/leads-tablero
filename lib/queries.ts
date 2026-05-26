@@ -8,6 +8,7 @@ import type {
   Contacto,
   EquipoMetricas,
   EventoAgenda,
+  FunnelData,
   Lead,
   LeadDetalle,
   LeadFrio,
@@ -15,6 +16,8 @@ import type {
   OportunidadDia,
   PatronIa,
   PipelineEstado,
+  TimingItem,
+  TrendPoint,
 } from "@/lib/types";
 
 export async function getPipelineResumen(): Promise<PipelineEstado[]> {
@@ -164,6 +167,47 @@ export async function getEquipoMetricas(): Promise<EquipoMetricas> {
     ganados_mes_valor: sum("ganados_mes_valor"),
     ratio_cierre: ratioCierre,
   };
+}
+
+// Funnel del mes especificado (0 = mes actual, 1 = mes anterior, etc.).
+export async function getFunnelData(mesesAtras: number): Promise<FunnelData> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("funnel_para_mes", {
+    p_meses_atras: mesesAtras,
+  });
+  if (error) throw error;
+  const row = Array.isArray(data) ? data[0] : data;
+  return {
+    nuevos_total: Number(row?.nuevos_total) || 0,
+    conversacion_acum: Number(row?.conversacion_acum) || 0,
+    propuesta_acum: Number(row?.propuesta_acum) || 0,
+    cierre_acum: Number(row?.cierre_acum) || 0,
+    ganados: Number(row?.ganados) || 0,
+    valor_ganado: Number(row?.valor_ganado) || 0,
+  };
+}
+
+// Tiempo promedio por transición de estado. Devuelve 1 fila por transición.
+export async function getTimingData(): Promise<TimingItem[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("v_tiempo_por_etapa")
+    .select("*");
+  if (error) throw error;
+  return (data ?? []) as TimingItem[];
+}
+
+// Tendencia mensual: leads creados y ganados por mes. Devuelve los últimos
+// N meses (default 3) en orden cronológico ascendente.
+export async function getTrendData(meses = 3): Promise<TrendPoint[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("v_trend_mensual")
+    .select("*")
+    .lte("meses_atras", meses - 1)
+    .order("mes", { ascending: true });
+  if (error) throw error;
+  return (data ?? []) as TrendPoint[];
 }
 
 // El primer patrón detectado (la vista devuelve 0 o 1 fila gracias al HAVING).

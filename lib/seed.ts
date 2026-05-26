@@ -40,7 +40,13 @@ type Estado = "nuevo" | "conversacion" | "propuesta" | "cierre" | "ganado";
 type Tipo = "recurrente" | "proyecto";
 type Temp = "hot" | "warm" | "med" | "cool";
 type Oport = "caliente" | "esperando_firma" | "por_reactivar" | "sin_asignar";
-type Canal = "mail" | "llamado" | "whatsapp" | "reunion" | "linkedin";
+type Canal =
+  | "mail"
+  | "llamado"
+  | "whatsapp"
+  | "reunion"
+  | "linkedin"
+  | "cambio_estado";
 type Modalidad = "meet" | "zoom" | "whatsapp" | "presencial";
 type AgendaTag = "cierre_semana" | "referido" | "propuesta" | "definitiva";
 
@@ -496,6 +502,7 @@ function historialContactos(lead: LeadSeed, leadId: string) {
     fecha: string;
     canal: Canal;
     nota: string;
+    metadata: Record<string, unknown>;
   }> = [];
 
   const canalPrimerContacto: Record<Origen, Canal> = {
@@ -585,6 +592,7 @@ function historialContactos(lead: LeadSeed, leadId: string) {
     fecha: diasAtras(lead.dias_creacion),
     canal: canalPrimerContacto[lead.origen],
     nota: curada?.primero ?? templatesPrimero[lead.origen],
+    metadata: {},
   });
 
   // 2) Intermedio (opcional)
@@ -594,6 +602,7 @@ function historialContactos(lead: LeadSeed, leadId: string) {
       fecha: diasAtras(intermedio!),
       canal: "llamado",
       nota: curada?.intermedio ?? templatesIntermedio[hash % templatesIntermedio.length],
+      metadata: {},
     });
   }
 
@@ -604,10 +613,60 @@ function historialContactos(lead: LeadSeed, leadId: string) {
       fecha: diasAtras(lead.dias_ultimo_contacto!),
       canal: "mail",
       nota: curada?.ultimo ?? templatesUltimo[hash % templatesUltimo.length],
+      metadata: {},
     });
   }
 
   return contactos;
+}
+
+// Para que /conversion tenga datos realistas: por cada lead en estado >= 'conversacion',
+// generamos los cambios_estado intermedios distribuidos en el tiempo entre
+// fecha_creacion y hoy. Esto alimenta v_tiempo_por_etapa.
+const ORDEN_ESTADOS_SEED: Estado[] = [
+  "nuevo",
+  "conversacion",
+  "propuesta",
+  "cierre",
+  "ganado",
+];
+
+function cambiosEstadoSimulados(lead: LeadSeed, leadId: string) {
+  const idxFinal = ORDEN_ESTADOS_SEED.indexOf(lead.estado);
+  if (idxFinal <= 0) return []; // 'nuevo' no tiene cambios previos
+
+  const cambios: Array<{
+    lead_id: string;
+    fecha: string;
+    canal: Canal;
+    nota: string;
+    metadata: Record<string, string>;
+  }> = [];
+
+  // Cuántos saltos hizo: idxFinal saltos (de nuevo a su estado actual).
+  // Distribuir uniformemente entre día = dias_creacion (ingreso) y día 0 (ahora).
+  // Para leads en estados muy avanzados, repartimos en partes iguales.
+  for (let i = 1; i <= idxFinal; i++) {
+    const from = ORDEN_ESTADOS_SEED[i - 1];
+    const to = ORDEN_ESTADOS_SEED[i];
+    // El i-ésimo cambio cae a t = dias_creacion * (1 - i/(idxFinal+1)).
+    // Ejemplo: lead creado hace 30d, estado=cierre (idx=3).
+    //   cambio 1 (nuevo→conv): día 22, cambio 2 (conv→prop): día 15,
+    //   cambio 3 (prop→cierre): día 7. Distribución limpia.
+    const fraccion = i / (idxFinal + 1);
+    const diasAtrasCambio = Math.max(
+      0,
+      Math.round(lead.dias_creacion * (1 - fraccion)),
+    );
+    cambios.push({
+      lead_id: leadId,
+      fecha: diasAtras(diasAtrasCambio),
+      canal: "cambio_estado",
+      nota: `De ${from} a ${to}`,
+      metadata: { from, to },
+    });
+  }
+  return cambios;
 }
 
 // Agenda del día (matchea el mockup).
@@ -733,10 +792,20 @@ export async function resetAndSeed(): Promise<SeedResult> {
     return historialContactos(l, id);
   });
 
-  // El trigger usa greatest(), no pisa la fecha que ya pusimos en cada lead.
+  // Cambios de estado simulados para que /conversion tenga data realista
+  // (timing por etapa, trayectoria del lead). El trigger los ignora para
+  // no afectar fecha_ultimo_contacto.
+  const cambiosEstado = LEADS.flatMap((l) => {
+    const id = leadIdPorNombre.get(l.nombre);
+    if (!id) return [];
+    return cambiosEstadoSimulados(l, id);
+  });
+
+  const todosContactos = [...contactos, ...cambiosEstado];
+
   const { error: errContactos } = await supabase
     .from("contactos")
-    .insert(contactos);
+    .insert(todosContactos);
   if (errContactos) {
     throw new Error(`Insertando contactos: ${errContactos.message}`);
   }
@@ -760,7 +829,7 @@ export async function resetAndSeed(): Promise<SeedResult> {
   return {
     comerciales: comInsertados.length,
     leads: leadsInsertados.length,
-    contactos: contactos.length,
+    contactos: todosContactos.length,
     agenda: agendaPayload.length,
   };
 }
