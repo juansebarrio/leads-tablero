@@ -1,0 +1,505 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>JS80 · Drawer · responsive</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F7F6F2;
+    --panel: #FFFFFF;
+    --panel-2: #FBFAF6;
+    --ink: #0E0E12;
+    --ink-2: #2A2A33;
+    --muted: #6B6B75;
+    --muted-2: #9A9AA3;
+    --line: #E8E6DE;
+    --line-2: #F0EEE6;
+    --azul: #6B8CFF;
+    --azul-soft: #EDF1FF;
+    --violeta: #8B6FFF;
+    --violeta-soft: #F1ECFF;
+    --turquesa: #5DC7E0;
+    --turquesa-soft: #E5F4F9;
+    --coral: #FF8AA0;
+    --rojo: #C8362E;
+    --rojo-soft: #FBEAE7;
+    --amarillo: #B8860B;
+    --amarillo-soft: #FBF3DB;
+    --verde: #3E8A5A;
+    --verde-soft: #E6F1EB;
+    --display: 'Fraunces', Georgia, serif;
+    --body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    font-family: var(--body);
+    color: var(--ink);
+    background: var(--bg);
+    font-size: 13px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+  svg { display: block; }
+
+  /* Página de fondo (simulada) */
+  .bg-page {
+    padding: 40px;
+    color: var(--muted);
+    font-size: 12px;
+  }
+  .bg-page::after {
+    content: "Página detrás del drawer (tablero o ficha)";
+    display: block;
+    font-family: var(--display);
+    font-size: 16px;
+    color: var(--muted-2);
+    text-align: center;
+    margin-top: 30vh;
+  }
+
+  /* Backdrop */
+  .backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(14, 14, 18, 0.4);
+    z-index: 60;
+  }
+
+  /* ============================================ */
+  /* DRAWER · base desktop                         */
+  /* ============================================ */
+  .drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    height: 100vh;
+    width: 480px;
+    max-width: 100%;
+    background: var(--panel);
+    z-index: 70;
+    box-shadow: -8px 0 32px rgba(14,14,18,0.12);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .drawer-header {
+    padding: 22px 24px 18px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  .drawer-title {
+    font-family: var(--display);
+    font-weight: 500;
+    font-variation-settings: "SOFT" 100, "opsz" 144;
+    font-size: 22px;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    margin-bottom: 4px;
+  }
+  .drawer-title em {
+    font-style: italic;
+    color: var(--violeta);
+    font-weight: 500;
+  }
+  .drawer-sub {
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .drawer-sub strong { color: var(--ink-2); font-weight: 600; }
+  .drawer-close {
+    background: transparent;
+    border: 1px solid var(--line);
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--muted);
+    flex-shrink: 0;
+  }
+  .drawer-close:hover {
+    border-color: var(--ink);
+    color: var(--ink);
+  }
+
+  .drawer-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 22px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .drawer-footer {
+    padding: 16px 24px;
+    border-top: 1px solid var(--line);
+    background: var(--panel-2);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .footer-hint {
+    font-size: 11.5px;
+    color: var(--muted);
+  }
+  .footer-hint kbd {
+    font-family: var(--body);
+    font-size: 10.5px;
+    background: white;
+    border: 1px solid var(--line);
+    padding: 1px 6px;
+    border-radius: 3px;
+    color: var(--muted);
+    margin: 0 2px;
+  }
+  .footer-actions { display: flex; gap: 10px; }
+  .btn {
+    border: 1px solid var(--line);
+    background: var(--panel);
+    color: var(--ink-2);
+    padding: 9px 16px;
+    border-radius: 6px;
+    font-family: var(--body);
+    font-weight: 500;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .btn:hover { border-color: var(--ink-2); }
+  .btn-primary {
+    background: var(--ink);
+    color: white;
+    border-color: var(--ink);
+  }
+  .btn-primary:hover { background: var(--violeta); border-color: var(--violeta); }
+
+  /* CAMPOS */
+  .field { display: flex; flex-direction: column; gap: 7px; }
+  .field-label {
+    font-size: 11.5px;
+    color: var(--ink-2);
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .field-hint {
+    font-size: 11px;
+    color: var(--muted-2);
+    font-weight: 400;
+  }
+  .input {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-family: var(--body);
+    font-size: 13.5px;
+    color: var(--ink);
+    width: 100%;
+  }
+  .input:focus {
+    outline: none;
+    border-color: var(--violeta);
+    box-shadow: 0 0 0 3px var(--violeta-soft);
+  }
+  .input::placeholder { color: var(--muted-2); }
+  .input.filled { background: var(--panel-2); }
+  textarea.input {
+    min-height: 90px;
+    resize: vertical;
+    line-height: 1.5;
+  }
+
+  /* Canal grid */
+  .canal-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+  }
+  .canal-option {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 11px 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+  }
+  .canal-option .canal-icon {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--line-2);
+    color: var(--muted);
+  }
+  .canal-option .canal-label {
+    font-size: 10.5px;
+    color: var(--muted);
+    font-weight: 500;
+  }
+  .canal-option.selected {
+    background: var(--violeta-soft);
+    border-color: var(--violeta);
+  }
+  .canal-option.selected .canal-icon {
+    background: var(--violeta);
+    color: white;
+  }
+  .canal-option.selected .canal-label {
+    color: var(--violeta);
+    font-weight: 600;
+  }
+
+  /* Fila fecha + hora */
+  .field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  /* Chips */
+  .chips-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .chip {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    padding: 7px 14px;
+    border-radius: 999px;
+    font-size: 12.5px;
+    color: var(--ink-2);
+    cursor: pointer;
+    font-weight: 500;
+  }
+  .chip.selected {
+    background: var(--ink);
+    color: white;
+    border-color: var(--ink);
+  }
+
+  /* Sección próximo paso */
+  .next-step-section {
+    background: var(--violeta-soft);
+    border: 1px solid #D6CAFF;
+    border-radius: 8px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .next-step-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .next-step-icon {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: var(--violeta);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .next-step-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--violeta);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .info-card {
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 14px 16px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  .info-icon {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    background: var(--violeta-soft);
+    color: var(--violeta);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .info-text {
+    font-size: 12.5px;
+    color: var(--ink-2);
+    line-height: 1.55;
+  }
+  .info-text strong { font-weight: 600; color: var(--ink); }
+
+  /* ============================================ */
+  /* BREAKPOINTS                                   */
+  /* ============================================ */
+
+  /* Mobile <768: drawer toma toda la pantalla */
+  @media (max-width: 767px) {
+    .drawer {
+      width: 100%;
+      max-width: 100%;
+      border-radius: 0;
+    }
+    .drawer-header { padding: 16px 18px; }
+    .drawer-body { padding: 18px; gap: 16px; }
+    .drawer-footer {
+      padding: 14px 18px;
+      flex-direction: column-reverse;
+      align-items: stretch;
+      gap: 10px;
+    }
+    .footer-hint {
+      display: none;
+    }
+    .footer-actions {
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      gap: 8px;
+    }
+    .footer-actions .btn {
+      padding: 11px;
+      text-align: center;
+      justify-content: center;
+    }
+    .drawer-title { font-size: 19px; }
+
+    /* Canal grid: 5 columnas siguen pero más compactas */
+    .canal-option { padding: 9px 4px; }
+    .canal-option .canal-label { font-size: 10px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-page">Fondo simulado de la app</div>
+<div class="backdrop"></div>
+
+<!-- DRAWER REGISTRAR CONTACTO -->
+<div class="drawer">
+  <div class="drawer-header">
+    <div>
+      <div class="drawer-title">Registrar <em>contacto</em></div>
+      <div class="drawer-sub">con <strong>Constructora Aliaga</strong></div>
+    </div>
+    <button class="drawer-close" aria-label="Cerrar">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+  </div>
+
+  <div class="drawer-body">
+    <div class="field">
+      <div class="field-label"><span>¿Por dónde lo contactaste?</span></div>
+      <div class="canal-grid">
+        <button class="canal-option" type="button">
+          <div class="canal-icon">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 5L2 7"/></svg>
+          </div>
+          <span class="canal-label">Mail</span>
+        </button>
+        <button class="canal-option selected" type="button">
+          <div class="canal-icon">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          </div>
+          <span class="canal-label">Llamado</span>
+        </button>
+        <button class="canal-option" type="button">
+          <div class="canal-icon">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8z"/></svg>
+          </div>
+          <span class="canal-label">WhatsApp</span>
+        </button>
+        <button class="canal-option" type="button">
+          <div class="canal-icon">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+          </div>
+          <span class="canal-label">Reunión</span>
+        </button>
+        <button class="canal-option" type="button">
+          <div class="canal-icon">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-4 0v7h-4v-7a6 6 0 0 1 6-6zM2 9h4v12H2zM4 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/></svg>
+          </div>
+          <span class="canal-label">LinkedIn</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="field">
+      <div class="field-label"><span>¿Cuándo?</span></div>
+      <div class="field-row">
+        <input class="input filled" type="text" value="Hoy, 26 de mayo" />
+        <input class="input filled" type="text" value="14:30" />
+      </div>
+    </div>
+
+    <div class="field">
+      <div class="field-label">
+        <span>¿Qué pasó?</span>
+        <span class="field-hint">Lo escribís vos, no se va a olvidar</span>
+      </div>
+      <textarea class="input filled" placeholder="Hablé con Carlos. Confirmó arranque en junio. Pidió cotización detallada por unidades. Me la pasa por mail mañana."></textarea>
+    </div>
+
+    <div class="next-step-section">
+      <div class="next-step-header">
+        <div class="next-step-icon">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+        </div>
+        <span class="next-step-title">Lo siguiente</span>
+      </div>
+      <div class="field">
+        <div class="field-label">¿Qué hay que hacer después?</div>
+        <input class="input" type="text" placeholder="Ej: Mandar cotización detallada por mail" />
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <div class="field-label">Cuándo</div>
+          <input class="input" type="text" placeholder="Mañana" />
+        </div>
+        <div class="field">
+          <div class="field-label">Hora</div>
+          <input class="input" type="text" placeholder="10:00" />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="drawer-footer">
+    <span class="footer-hint"><kbd>⌘</kbd><kbd>↵</kbd> guardar</span>
+    <div class="footer-actions">
+      <button class="btn">Cancelar</button>
+      <button class="btn btn-primary">Guardar contacto</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

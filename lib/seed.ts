@@ -483,6 +483,10 @@ const LEADS: LeadSeed[] = [
 ];
 
 // Historial de contactos: 1 a 3 por lead según madurez.
+// Las notas son rioplatenses, contextualizadas al canal y la posición en la
+// secuencia (primer / intermedio / último). Para los leads "estrella" del
+// mockup (Aliaga, Vázquez, Norte, Mercurio, Don Eduardo) usamos textos
+// curados para que cierren con el norte visual.
 function historialContactos(lead: LeadSeed, leadId: string) {
   const contactos: Array<{
     lead_id: string;
@@ -491,40 +495,112 @@ function historialContactos(lead: LeadSeed, leadId: string) {
     nota: string;
   }> = [];
 
-  const canalDefault: Record<Origen, Canal> = {
+  const canalPrimerContacto: Record<Origen, Canal> = {
     formulario: "mail",
     referido: "mail",
     linkedin: "linkedin",
     whatsapp: "whatsapp",
   };
 
+  const tieneSeguimiento =
+    lead.dias_ultimo_contacto !== null &&
+    lead.dias_ultimo_contacto < lead.dias_creacion;
+
+  const intermedio = tieneSeguimiento
+    ? Math.floor((lead.dias_creacion + lead.dias_ultimo_contacto!) / 2)
+    : null;
+  const incluyeIntermedio =
+    intermedio !== null && intermedio > lead.dias_ultimo_contacto!;
+
+  // Notas curadas para los 5 leads visibles en el tablero.
+  const curadas: Record<string, { primero: string; intermedio?: string; ultimo?: string }> = {
+    "Constructora Aliaga": {
+      primero:
+        "Llegaron por el formulario de la web. Pidieron presupuesto para reforma integral de oficinas en Vicente López. Respondí pidiendo llamado.",
+      intermedio:
+        "Hablé con Carlos (director). Necesitan empezar antes del 1 de junio. Pasaron cantidad de unidades y plazo. Quedé en mandar propuesta esta semana.",
+      ultimo:
+        "Mandé propuesta final con descuento del 15% por pago anticipado. Pidieron revisarla con socios y volver el lunes.",
+    },
+    "Estudio Vázquez & Asoc.": {
+      primero:
+        "Nos contactó por recomendación de Aliaga. Buscan armar área de marketing in-house. Coordinamos llamado para entender alcance.",
+      intermedio:
+        "Hablé con Sandra. Tienen presupuesto aprobado pero el socio mayoritario está de viaje hasta fin de mes. Reagendamos para confirmar.",
+      ultimo:
+        "Mail de seguimiento. Sin respuesta todavía, esperando que vuelva Vázquez para retomar.",
+    },
+    "Clínica Norte": {
+      primero:
+        "Conexión vía LinkedIn con la Dra. Yáñez. Tienen tres sedes y quieren unificar el sistema de turnos. Pidieron caso de estudio.",
+      intermedio:
+        "Llamado con el equipo administrativo. Validamos alcance y armamos propuesta con dos escenarios (básico y completo).",
+      ultimo:
+        "Enviada propuesta firmada por la Dra. Yáñez. Esperando OK del directorio para definir fecha de arranque.",
+    },
+    "Agencia Mercurio": {
+      primero:
+        "Llegaron por el formulario web. Pidieron presupuesto para rediseño de su producto interno. No están asignados a nadie aún.",
+    },
+    "Don Eduardo": {
+      primero:
+        "Me escribió por WhatsApp recomendado por su contador. Quiere ordenar la gestión de clientes de su estudio. Quedé en mandar opciones.",
+      intermedio:
+        "Llamado breve. Confirmó interés y pidió cotización con escenario mínimo. Es un cliente referido, prioridad alta.",
+      ultimo:
+        "Mandé cotización por WhatsApp con el plan más chico. Esperando que la revise con su socia.",
+    },
+  };
+
+  const curada = curadas[lead.nombre];
+
+  // Templates por canal para el resto de los leads.
+  const nombreCorto = lead.nombre.split(" ")[0];
+  const templatesPrimero: Record<Origen, string> = {
+    formulario: `Llegaron por el formulario web. ${lead.origen_detalle ? `${lead.origen_detalle}.` : "Pidieron presupuesto inicial."} Respondí pidiendo más contexto.`,
+    referido: `Nos llegaron por referido${lead.origen_detalle ? ` (${lead.origen_detalle})` : ""}. Mandé presentación corta y coordiné llamado.`,
+    linkedin: `Conexión vía LinkedIn. Vieron contenido nuestro y pidieron más info de cómo trabajamos.`,
+    whatsapp: `Me escribieron por WhatsApp pidiendo info. Quedé en mandar opciones por mail.`,
+  };
+  const templatesIntermedio = [
+    `Llamado con el equipo de ${nombreCorto}. Confirmaron presupuesto y necesidades. Quedé en mandar propuesta.`,
+    `Hablamos por teléfono, validamos alcance y armamos próximos pasos. Buen feeling.`,
+    `Llamado de seguimiento. Pidieron ajustar algunos puntos del alcance. Reviso y reenvío.`,
+  ];
+  const templatesUltimo = [
+    `Mail de seguimiento. Pedí confirmación sobre la propuesta. Sin respuesta todavía.`,
+    `Reenvié la propuesta con los ajustes que pidieron. Esperando feedback.`,
+    `Mandé recordatorio con resumen de los puntos clave. Quedaron de responder esta semana.`,
+  ];
+
+  // Reproducible: rotamos por hash simple del nombre.
+  const hash = Array.from(lead.nombre).reduce((s, c) => s + c.charCodeAt(0), 0);
+
+  // 1) Primer contacto
   contactos.push({
     lead_id: leadId,
     fecha: diasAtras(lead.dias_creacion),
-    canal: canalDefault[lead.origen],
-    nota: "Primer contacto",
+    canal: canalPrimerContacto[lead.origen],
+    nota: curada?.primero ?? templatesPrimero[lead.origen],
   });
 
-  if (
-    lead.dias_ultimo_contacto !== null &&
-    lead.dias_ultimo_contacto < lead.dias_creacion
-  ) {
-    const intermedio = Math.floor(
-      (lead.dias_creacion + lead.dias_ultimo_contacto) / 2,
-    );
-    if (intermedio > lead.dias_ultimo_contacto) {
-      contactos.push({
-        lead_id: leadId,
-        fecha: diasAtras(intermedio),
-        canal: "llamado",
-        nota: "Seguimiento intermedio",
-      });
-    }
+  // 2) Intermedio (opcional)
+  if (incluyeIntermedio) {
     contactos.push({
       lead_id: leadId,
-      fecha: diasAtras(lead.dias_ultimo_contacto),
+      fecha: diasAtras(intermedio!),
+      canal: "llamado",
+      nota: curada?.intermedio ?? templatesIntermedio[hash % templatesIntermedio.length],
+    });
+  }
+
+  // 3) Último contacto
+  if (tieneSeguimiento) {
+    contactos.push({
+      lead_id: leadId,
+      fecha: diasAtras(lead.dias_ultimo_contacto!),
       canal: "mail",
-      nota: "Último intercambio",
+      nota: curada?.ultimo ?? templatesUltimo[hash % templatesUltimo.length],
     });
   }
 
