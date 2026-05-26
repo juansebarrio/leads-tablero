@@ -1,0 +1,466 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>JS80 · Drawer · Editar lead</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F7F6F2;
+    --panel: #FFFFFF;
+    --panel-2: #FBFAF6;
+    --ink: #0E0E12;
+    --ink-2: #2A2A33;
+    --muted: #6B6B75;
+    --muted-2: #9A9AA3;
+    --line: #E8E6DE;
+    --line-2: #F0EEE6;
+    --azul: #6B8CFF;
+    --azul-soft: #EDF1FF;
+    --violeta: #8B6FFF;
+    --violeta-soft: #F1ECFF;
+    --turquesa: #5DC7E0;
+    --turquesa-soft: #E5F4F9;
+    --coral: #FF8AA0;
+    --rojo: #C8362E;
+    --rojo-soft: #FBEAE7;
+    --amarillo: #B8860B;
+    --amarillo-soft: #FBF3DB;
+    --verde: #3E8A5A;
+    --verde-soft: #E6F1EB;
+    --display: 'Fraunces', Georgia, serif;
+    --body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    font-family: var(--body);
+    color: var(--ink);
+    background: var(--bg);
+    font-size: 13px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+  svg { display: block; }
+
+  .bg-page {
+    padding: 40px;
+    color: var(--muted-2);
+    font-size: 12px;
+    text-align: center;
+    font-family: var(--display);
+    padding-top: 30vh;
+  }
+  .backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(14, 14, 18, 0.4);
+    z-index: 60;
+  }
+
+  /* DRAWER */
+  .drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    height: 100vh;
+    width: 520px;
+    max-width: 100%;
+    background: var(--panel);
+    z-index: 70;
+    box-shadow: -8px 0 32px rgba(14,14,18,0.12);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .drawer-header {
+    padding: 22px 24px 18px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  .drawer-title {
+    font-family: var(--display);
+    font-weight: 500;
+    font-variation-settings: "SOFT" 100, "opsz" 144;
+    font-size: 22px;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    margin-bottom: 4px;
+  }
+  .drawer-title em {
+    font-style: italic;
+    color: var(--violeta);
+    font-weight: 500;
+  }
+  .drawer-sub {
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .drawer-sub strong { color: var(--ink-2); font-weight: 600; }
+  .drawer-close {
+    background: transparent;
+    border: 1px solid var(--line);
+    width: 32px; height: 32px;
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    color: var(--muted);
+    flex-shrink: 0;
+  }
+  .drawer-close:hover { border-color: var(--ink); color: var(--ink); }
+
+  .drawer-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 22px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .drawer-footer {
+    padding: 16px 24px;
+    border-top: 1px solid var(--line);
+    background: var(--panel-2);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .footer-hint {
+    font-size: 11.5px;
+    color: var(--muted);
+  }
+  .footer-hint kbd {
+    font-family: var(--body);
+    font-size: 10.5px;
+    background: white;
+    border: 1px solid var(--line);
+    padding: 1px 6px;
+    border-radius: 3px;
+    color: var(--muted);
+    margin: 0 2px;
+  }
+  .footer-actions { display: flex; gap: 10px; }
+  .btn {
+    border: 1px solid var(--line);
+    background: var(--panel);
+    color: var(--ink-2);
+    padding: 9px 16px;
+    border-radius: 6px;
+    font-family: var(--body);
+    font-weight: 500;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .btn:hover { border-color: var(--ink-2); }
+  .btn-primary {
+    background: var(--ink);
+    color: white;
+    border-color: var(--ink);
+  }
+  .btn-primary:hover { background: var(--violeta); border-color: var(--violeta); }
+
+  /* CAMPOS */
+  .field { display: flex; flex-direction: column; gap: 7px; }
+  .field-label {
+    font-size: 11.5px;
+    color: var(--ink-2);
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .field-hint {
+    font-size: 11px;
+    color: var(--muted-2);
+    font-weight: 400;
+  }
+  .input {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-family: var(--body);
+    font-size: 13.5px;
+    color: var(--ink);
+    width: 100%;
+  }
+  .input:focus {
+    outline: none;
+    border-color: var(--violeta);
+    box-shadow: 0 0 0 3px var(--violeta-soft);
+  }
+  .input::placeholder { color: var(--muted-2); }
+  .input.filled { background: var(--panel-2); }
+  textarea.input {
+    min-height: 70px;
+    resize: vertical;
+    line-height: 1.5;
+  }
+
+  /* Fila de 2 columnas */
+  .field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  /* Chips */
+  .chips-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .chip {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    padding: 7px 14px;
+    border-radius: 999px;
+    font-size: 12.5px;
+    color: var(--ink-2);
+    cursor: pointer;
+    font-weight: 500;
+  }
+  .chip:hover { border-color: var(--ink-2); }
+  .chip.selected {
+    background: var(--ink);
+    color: white;
+    border-color: var(--ink);
+  }
+
+  /* Selector de comercial con avatar */
+  .owner-select {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .owner-option {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    padding: 5px 12px 5px 5px;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 12.5px;
+    color: var(--ink-2);
+    font-weight: 500;
+  }
+  .owner-option:hover { border-color: var(--ink-2); }
+  .owner-option.selected {
+    background: var(--violeta-soft);
+    border-color: var(--violeta);
+    color: var(--violeta);
+  }
+  .owner-avatar {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: white;
+    font-size: 9.5px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .av-ml { background: linear-gradient(135deg, #8B6FFF, #5DC7E0); }
+  .av-dt { background: linear-gradient(135deg, #FF8AA0, #FFB088); }
+  .av-sm { background: linear-gradient(135deg, #6B8CFF, #8B6FFF); }
+  .av-na { background: var(--line); color: var(--muted); border: 1px dashed var(--muted-2); }
+
+  /* Separador de sección */
+  .field-section {
+    border-top: 1px solid var(--line-2);
+    padding-top: 18px;
+    margin-top: 4px;
+  }
+  .section-label {
+    font-size: 10.5px;
+    color: var(--muted);
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  /* Input con prefijo USD */
+  .input-with-prefix {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: stretch;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    overflow: hidden;
+    background: var(--panel);
+  }
+  .input-prefix {
+    background: var(--panel-2);
+    border-right: 1px solid var(--line);
+    padding: 10px 12px;
+    font-size: 12.5px;
+    color: var(--muted);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+  }
+  .input-with-prefix .input {
+    border: none;
+    border-radius: 0;
+  }
+  .input-with-prefix:focus-within {
+    border-color: var(--violeta);
+    box-shadow: 0 0 0 3px var(--violeta-soft);
+  }
+
+  /* RESPONSIVE */
+  @media (max-width: 767px) {
+    .drawer { width: 100%; max-width: 100%; border-radius: 0; }
+    .drawer-header { padding: 16px 18px; }
+    .drawer-body { padding: 18px; gap: 16px; }
+    .drawer-footer {
+      padding: 14px 18px;
+      flex-direction: column-reverse;
+      align-items: stretch;
+      gap: 10px;
+    }
+    .footer-hint { display: none; }
+    .footer-actions {
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      gap: 8px;
+    }
+    .footer-actions .btn {
+      padding: 11px;
+      text-align: center;
+      justify-content: center;
+    }
+    .drawer-title { font-size: 19px; }
+    .field-row {
+      grid-template-columns: 1fr;
+      gap: 14px;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-page">Ficha del lead detrás del drawer</div>
+<div class="backdrop"></div>
+
+<div class="drawer">
+  <div class="drawer-header">
+    <div>
+      <div class="drawer-title">Editar <em>lead</em></div>
+      <div class="drawer-sub">Modificá los datos de <strong>Constructora Aliaga</strong></div>
+    </div>
+    <button class="drawer-close" aria-label="Cerrar">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+  </div>
+
+  <div class="drawer-body">
+
+    <!-- Sección: BÁSICO -->
+    <div class="section-label">Información básica</div>
+
+    <div class="field">
+      <div class="field-label"><span>Nombre</span></div>
+      <input class="input filled" type="text" value="Constructora Aliaga" />
+    </div>
+
+    <div class="field">
+      <div class="field-label">
+        <span>¿Por dónde llegó?</span>
+      </div>
+      <div class="chips-row">
+        <button class="chip selected" type="button">Formulario web</button>
+        <button class="chip" type="button">Referido</button>
+        <button class="chip" type="button">LinkedIn</button>
+        <button class="chip" type="button">WhatsApp</button>
+        <button class="chip" type="button">Otro</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <div class="field-label">
+        <span>Detalle del origen</span>
+        <span class="field-hint">opcional</span>
+      </div>
+      <input class="input filled" type="text" value="Pidió presupuesto reforma oficinas" />
+    </div>
+
+    <!-- Sección: NEGOCIO -->
+    <div class="field-section">
+      <div class="section-label">El negocio</div>
+
+      <div class="field">
+        <div class="field-label"><span>Valor estimado</span></div>
+        <div class="input-with-prefix">
+          <span class="input-prefix">USD</span>
+          <input class="input filled" type="text" value="4.800" />
+        </div>
+      </div>
+
+      <div class="field" style="margin-top: 14px;">
+        <div class="field-label"><span>Tipo de negocio</span></div>
+        <div class="chips-row">
+          <button class="chip selected" type="button">Recurrente</button>
+          <button class="chip" type="button">Proyecto único</button>
+        </div>
+      </div>
+
+      <div class="field" style="margin-top: 14px;">
+        <div class="field-label">
+          <span>Meses de compromiso</span>
+          <span class="field-hint">solo si es recurrente</span>
+        </div>
+        <input class="input filled" type="text" value="6" />
+      </div>
+    </div>
+
+    <!-- Sección: RESPONSABLE -->
+    <div class="field-section">
+      <div class="section-label">¿Quién lo lleva?</div>
+
+      <div class="owner-select">
+        <button class="owner-option selected" type="button">
+          <span class="owner-avatar av-ml">ML</span>
+          Mariana López
+        </button>
+        <button class="owner-option" type="button">
+          <span class="owner-avatar av-dt">DT</span>
+          Diego Tovar
+        </button>
+        <button class="owner-option" type="button">
+          <span class="owner-avatar av-sm">SM</span>
+          Sofía Martínez
+        </button>
+        <button class="owner-option" type="button">
+          <span class="owner-avatar av-na">?</span>
+          Sin asignar
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="drawer-footer">
+    <span class="footer-hint"><kbd>⌘</kbd><kbd>↵</kbd> guardar cambios</span>
+    <div class="footer-actions">
+      <button class="btn">Cancelar</button>
+      <button class="btn btn-primary">Guardar cambios</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

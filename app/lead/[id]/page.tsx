@@ -93,6 +93,15 @@ export default async function LeadPage({
           leadId={lead.id}
           leadNombre={lead.nombre}
           estadoActual={lead.estado}
+          origen={lead.origen}
+          origen_detalle={lead.origen_detalle}
+          valor_estimado={lead.valor_estimado}
+          tipo_negocio={lead.tipo_negocio}
+          meses_compromiso={lead.meses_compromiso}
+          proximo_paso={lead.proximo_paso}
+          proximo_paso_fecha={lead.proximo_paso_fecha}
+          responsable_id={lead.responsable_id}
+          responsable_nombre={lead.comerciales?.nombre ?? null}
         />
       </div>
 

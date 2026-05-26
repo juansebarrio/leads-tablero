@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>JS80 · Drawer · Marcar como perdido</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F7F6F2; --panel: #FFFFFF; --panel-2: #FBFAF6;
+    --ink: #0E0E12; --ink-2: #2A2A33; --muted: #6B6B75; --muted-2: #9A9AA3;
+    --line: #E8E6DE; --line-2: #F0EEE6;
+    --violeta: #8B6FFF; --violeta-soft: #F1ECFF;
+    --rojo: #C8362E; --rojo-soft: #FBEAE7;
+    --amarillo: #B8860B; --amarillo-soft: #FBF3DB;
+    --verde: #3E8A5A; --verde-soft: #E6F1EB;
+    --display: 'Fraunces', Georgia, serif;
+    --body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    font-family: var(--body); color: var(--ink); background: var(--bg);
+    font-size: 13px; line-height: 1.5; -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+  svg { display: block; }
+
+  .bg-page {
+    padding: 40px; color: var(--muted-2); font-size: 12px;
+    text-align: center; font-family: var(--display); padding-top: 30vh;
+  }
+  .backdrop { position: fixed; inset: 0; background: rgba(14, 14, 18, 0.4); z-index: 60; }
+
+  .drawer {
+    position: fixed; top: 0; right: 0; height: 100vh;
+    width: 480px; max-width: 100%; background: var(--panel); z-index: 70;
+    box-shadow: -8px 0 32px rgba(14,14,18,0.12);
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  .drawer-header {
+    padding: 22px 24px 18px; border-bottom: 1px solid var(--line);
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;
+  }
+  .drawer-title {
+    font-family: var(--display); font-weight: 500;
+    font-variation-settings: "SOFT" 100, "opsz" 144;
+    font-size: 22px; line-height: 1.15; letter-spacing: -0.02em;
+    color: var(--ink); margin-bottom: 4px;
+  }
+  .drawer-title em { font-style: italic; color: var(--rojo); font-weight: 500; }
+  .drawer-sub { font-size: 12px; color: var(--muted); }
+  .drawer-sub strong { color: var(--ink-2); font-weight: 600; }
+  .drawer-close {
+    background: transparent; border: 1px solid var(--line);
+    width: 32px; height: 32px; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--muted); flex-shrink: 0;
+  }
+
+  .drawer-body {
+    flex: 1; overflow-y: auto; padding: 22px 24px;
+    display: flex; flex-direction: column; gap: 18px;
+  }
+
+  .drawer-footer {
+    padding: 16px 24px; border-top: 1px solid var(--line); background: var(--panel-2);
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  }
+  .footer-hint { font-size: 11.5px; color: var(--muted); }
+  .footer-hint kbd {
+    font-family: var(--body); font-size: 10.5px;
+    background: white; border: 1px solid var(--line);
+    padding: 1px 6px; border-radius: 3px; color: var(--muted); margin: 0 2px;
+  }
+  .footer-actions { display: flex; gap: 10px; }
+  .btn {
+    border: 1px solid var(--line); background: var(--panel); color: var(--ink-2);
+    padding: 9px 16px; border-radius: 6px;
+    font-family: var(--body); font-weight: 500; font-size: 13px; cursor: pointer;
+  }
+  /* Botón de confirmación con tono rojo para acción destructiva */
+  .btn-danger {
+    background: var(--rojo); color: white; border-color: var(--rojo);
+  }
+  .btn-danger:hover { background: #A82B24; border-color: #A82B24; }
+
+  .field { display: flex; flex-direction: column; gap: 7px; }
+  .field-label {
+    font-size: 11.5px; color: var(--ink-2); font-weight: 600;
+    display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+  }
+  .field-hint { font-size: 11px; color: var(--muted-2); font-weight: 400; }
+  .input {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 6px;
+    padding: 10px 12px; font-family: var(--body); font-size: 13.5px;
+    color: var(--ink); width: 100%;
+  }
+  .input:focus { outline: none; border-color: var(--violeta); box-shadow: 0 0 0 3px var(--violeta-soft); }
+  textarea.input { min-height: 80px; resize: vertical; line-height: 1.5; }
+
+  /* Resumen del lead arriba (contexto de qué estás cerrando) */
+  .lead-summary {
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 14px 16px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 6px 14px;
+    align-items: baseline;
+  }
+  .summary-name {
+    font-family: var(--display);
+    font-weight: 500;
+    font-size: 16px;
+    color: var(--ink);
+    letter-spacing: -0.01em;
+  }
+  .summary-value {
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 16px;
+    color: var(--ink);
+    letter-spacing: -0.01em;
+  }
+  .summary-meta {
+    font-size: 11.5px;
+    color: var(--muted);
+  }
+  .summary-meta-right {
+    font-size: 11.5px;
+    color: var(--muted);
+    text-align: right;
+  }
+
+  /* Lista de motivos */
+  .motivos-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .motivo {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    text-align: left;
+    font-family: var(--body);
+    color: var(--ink);
+    transition: all 0.15s;
+  }
+  .motivo:hover { border-color: var(--ink-2); background: var(--panel-2); }
+  .motivo.selected {
+    background: var(--rojo-soft);
+    border-color: var(--rojo);
+  }
+  .motivo-radio {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    border: 1.5px solid var(--muted-2);
+    flex-shrink: 0;
+    position: relative;
+    background: white;
+  }
+  .motivo.selected .motivo-radio {
+    border-color: var(--rojo);
+    background: var(--rojo);
+  }
+  .motivo.selected .motivo-radio::after {
+    content: "";
+    position: absolute;
+    inset: 4px;
+    background: white;
+    border-radius: 50%;
+  }
+  .motivo-info { flex: 1; min-width: 0; }
+  .motivo-name {
+    font-weight: 600;
+    color: var(--ink);
+    font-size: 13.5px;
+    margin-bottom: 2px;
+  }
+  .motivo.selected .motivo-name { color: var(--rojo); }
+  .motivo-desc {
+    font-size: 11.5px;
+    color: var(--muted);
+  }
+  .motivo.selected .motivo-desc { color: var(--rojo); opacity: 0.85; }
+
+  /* Reapertura info */
+  .reopen-hint {
+    background: var(--violeta-soft);
+    border: 1px solid #D6CAFF;
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 11.5px;
+    color: var(--violeta);
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    line-height: 1.45;
+  }
+  .reopen-hint svg { flex-shrink: 0; margin-top: 1px; }
+  .reopen-hint strong { font-weight: 700; }
+
+  @media (max-width: 767px) {
+    .drawer { width: 100%; max-width: 100%; border-radius: 0; }
+    .drawer-header { padding: 16px 18px; }
+    .drawer-body { padding: 18px; gap: 16px; }
+    .drawer-footer {
+      padding: 14px 18px;
+      flex-direction: column-reverse;
+      align-items: stretch;
+      gap: 10px;
+    }
+    .footer-hint { display: none; }
+    .footer-actions {
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      gap: 8px;
+    }
+    .footer-actions .btn {
+      padding: 11px;
+      text-align: center;
+      justify-content: center;
+    }
+    .drawer-title { font-size: 19px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-page">Ficha del lead detrás</div>
+<div class="backdrop"></div>
+
+<div class="drawer">
+  <div class="drawer-header">
+    <div>
+      <div class="drawer-title">Marcar como <em>perdido</em></div>
+      <div class="drawer-sub">¿Qué pasó con <strong>Constructora Aliaga</strong>?</div>
+    </div>
+    <button class="drawer-close" aria-label="Cerrar">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+  </div>
+
+  <div class="drawer-body">
+
+    <!-- Resumen del lead -->
+    <div class="lead-summary">
+      <div class="summary-name">Constructora Aliaga</div>
+      <div class="summary-value">USD 4.800</div>
+      <div class="summary-meta">28 días en pipeline · estado Cierre</div>
+      <div class="summary-meta-right">responsable: Mariana</div>
+    </div>
+
+    <!-- Selector de motivo -->
+    <div class="field">
+      <div class="field-label">
+        <span>¿Por qué se cayó?</span>
+        <span class="field-hint">elegí lo que mejor describa</span>
+      </div>
+      <div class="motivos-list">
+        <button class="motivo selected" type="button">
+          <div class="motivo-radio"></div>
+          <div class="motivo-info">
+            <div class="motivo-name">Precio</div>
+            <div class="motivo-desc">Le pareció caro · no tenía presupuesto</div>
+          </div>
+        </button>
+        <button class="motivo" type="button">
+          <div class="motivo-radio"></div>
+          <div class="motivo-info">
+            <div class="motivo-name">Timing</div>
+            <div class="motivo-desc">No era el momento · quizá más adelante</div>
+          </div>
+        </button>
+        <button class="motivo" type="button">
+          <div class="motivo-radio"></div>
+          <div class="motivo-info">
+            <div class="motivo-name">Competencia</div>
+            <div class="motivo-desc">Eligió otra opción</div>
+          </div>
+        </button>
+        <button class="motivo" type="button">
+          <div class="motivo-radio"></div>
+          <div class="motivo-info">
+            <div class="motivo-name">No respondió</div>
+            <div class="motivo-desc">Lead frío que nunca contestó</div>
+          </div>
+        </button>
+        <button class="motivo" type="button">
+          <div class="motivo-radio"></div>
+          <div class="motivo-info">
+            <div class="motivo-name">Cambio de necesidad</div>
+            <div class="motivo-desc">Al cliente le cambió el proyecto</div>
+          </div>
+        </button>
+        <button class="motivo" type="button">
+          <div class="motivo-radio"></div>
+          <div class="motivo-info">
+            <div class="motivo-name">Otro</div>
+            <div class="motivo-desc">Especificá abajo en el detalle</div>
+          </div>
+        </button>
+      </div>
+    </div>
+
+    <!-- Nota libre -->
+    <div class="field">
+      <div class="field-label">
+        <span>Detalle</span>
+        <span class="field-hint">opcional, te va a servir para revisar después</span>
+      </div>
+      <textarea class="input" placeholder="Ej: Pidió bajar 30% el precio, no aceptaron contraoferta. El director firmó con un proveedor más barato."></textarea>
+    </div>
+
+    <!-- Hint de reapertura -->
+    <div class="reopen-hint">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+        <path d="M21 3v5h-5"/>
+      </svg>
+      <span>Si el cliente vuelve más adelante, vas a poder <strong>reabrir el lead</strong> desde la sección de Cerrados.</span>
+    </div>
+
+  </div>
+
+  <div class="drawer-footer">
+    <span class="footer-hint"><kbd>⌘</kbd><kbd>↵</kbd> confirmar</span>
+    <div class="footer-actions">
+      <button class="btn">Cancelar</button>
+      <button class="btn btn-danger">Marcar como perdido</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

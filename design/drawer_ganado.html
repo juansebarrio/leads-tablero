@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>JS80 · Drawer · Confirmar ganado</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F7F6F2; --panel: #FFFFFF; --panel-2: #FBFAF6;
+    --ink: #0E0E12; --ink-2: #2A2A33; --muted: #6B6B75; --muted-2: #9A9AA3;
+    --line: #E8E6DE; --line-2: #F0EEE6;
+    --violeta: #8B6FFF; --violeta-soft: #F1ECFF;
+    --rojo: #C8362E; --rojo-soft: #FBEAE7;
+    --verde: #3E8A5A; --verde-soft: #E6F1EB;
+    --display: 'Fraunces', Georgia, serif;
+    --body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    font-family: var(--body); color: var(--ink); background: var(--bg);
+    font-size: 13px; line-height: 1.5; -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+  svg { display: block; }
+
+  .bg-page {
+    padding: 40px; color: var(--muted-2); font-size: 12px;
+    text-align: center; font-family: var(--display); padding-top: 30vh;
+  }
+  .backdrop { position: fixed; inset: 0; background: rgba(14, 14, 18, 0.4); z-index: 60; }
+
+  .drawer {
+    position: fixed; top: 0; right: 0; height: 100vh;
+    width: 480px; max-width: 100%; background: var(--panel); z-index: 70;
+    box-shadow: -8px 0 32px rgba(14,14,18,0.12);
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  .drawer-header {
+    padding: 22px 24px 18px; border-bottom: 1px solid var(--line);
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;
+  }
+  .drawer-title {
+    font-family: var(--display); font-weight: 500;
+    font-variation-settings: "SOFT" 100, "opsz" 144;
+    font-size: 22px; line-height: 1.15; letter-spacing: -0.02em;
+    color: var(--ink); margin-bottom: 4px;
+  }
+  .drawer-title em { font-style: italic; color: var(--verde); font-weight: 500; }
+  .drawer-sub { font-size: 12px; color: var(--muted); }
+  .drawer-sub strong { color: var(--ink-2); font-weight: 600; }
+  .drawer-close {
+    background: transparent; border: 1px solid var(--line);
+    width: 32px; height: 32px; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--muted); flex-shrink: 0;
+  }
+
+  .drawer-body {
+    flex: 1; overflow-y: auto; padding: 22px 24px;
+    display: flex; flex-direction: column; gap: 20px;
+  }
+
+  .drawer-footer {
+    padding: 16px 24px; border-top: 1px solid var(--line); background: var(--panel-2);
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  }
+  .footer-hint { font-size: 11.5px; color: var(--muted); }
+  .footer-hint kbd {
+    font-family: var(--body); font-size: 10.5px;
+    background: white; border: 1px solid var(--line);
+    padding: 1px 6px; border-radius: 3px; color: var(--muted); margin: 0 2px;
+  }
+  .footer-actions { display: flex; gap: 10px; }
+  .btn {
+    border: 1px solid var(--line); background: var(--panel); color: var(--ink-2);
+    padding: 9px 16px; border-radius: 6px;
+    font-family: var(--body); font-weight: 500; font-size: 13px; cursor: pointer;
+  }
+  /* Botón verde, celebratorio */
+  .btn-success {
+    background: var(--verde); color: white; border-color: var(--verde);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .btn-success:hover { background: #2E6D45; border-color: #2E6D45; }
+
+  .field { display: flex; flex-direction: column; gap: 7px; }
+  .field-label {
+    font-size: 11.5px; color: var(--ink-2); font-weight: 600;
+    display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+  }
+  .field-hint { font-size: 11px; color: var(--muted-2); font-weight: 400; }
+  .input {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 6px;
+    padding: 10px 12px; font-family: var(--body); font-size: 13.5px;
+    color: var(--ink); width: 100%;
+  }
+  .input:focus { outline: none; border-color: var(--verde); box-shadow: 0 0 0 3px var(--verde-soft); }
+  textarea.input { min-height: 70px; resize: vertical; line-height: 1.5; }
+
+  /* Celebración visual */
+  .celebration {
+    background: linear-gradient(180deg, #F2F8F4 0%, #E6F1EB 100%);
+    border: 1px solid #C9E2D2;
+    border-radius: 10px;
+    padding: 22px 20px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .celebration::before {
+    content: "";
+    position: absolute;
+    top: -40px;
+    right: -40px;
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(62, 138, 90, 0.12) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .celebration::after {
+    content: "";
+    position: absolute;
+    bottom: -50px;
+    left: -30px;
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(62, 138, 90, 0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .check-circle {
+    width: 56px; height: 56px;
+    margin: 0 auto 14px;
+    border-radius: 50%;
+    background: var(--verde);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 20px rgba(62, 138, 90, 0.25);
+  }
+  .celebration-title {
+    font-family: var(--display);
+    font-weight: 500;
+    font-variation-settings: "SOFT" 100, "opsz" 144;
+    font-size: 22px;
+    letter-spacing: -0.015em;
+    color: var(--ink);
+    margin-bottom: 4px;
+    line-height: 1.2;
+  }
+  .celebration-title em { font-style: italic; color: var(--verde); font-weight: 500; }
+  .celebration-sub {
+    font-size: 13px;
+    color: var(--ink-2);
+  }
+  .celebration-sub strong { font-weight: 600; }
+
+  /* Resumen del lead */
+  .lead-summary {
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 12px 14px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 4px 14px;
+    align-items: baseline;
+  }
+  .summary-name {
+    font-family: var(--display);
+    font-weight: 500;
+    font-size: 14.5px;
+    color: var(--ink);
+    letter-spacing: -0.01em;
+  }
+  .summary-meta {
+    font-size: 11.5px;
+    color: var(--muted);
+  }
+  .summary-meta-right {
+    font-size: 11.5px;
+    color: var(--muted);
+    text-align: right;
+  }
+
+  /* Input con prefijo USD */
+  .input-with-prefix {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: stretch;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    overflow: hidden;
+    background: var(--panel);
+  }
+  .input-prefix {
+    background: var(--panel-2);
+    border-right: 1px solid var(--line);
+    padding: 10px 12px;
+    font-size: 12.5px;
+    color: var(--muted);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+  }
+  .input-with-prefix .input {
+    border: none;
+    border-radius: 0;
+  }
+  .input-with-prefix:focus-within {
+    border-color: var(--verde);
+    box-shadow: 0 0 0 3px var(--verde-soft);
+  }
+
+  .field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  /* Indicador de delta vs estimado */
+  .delta-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 9px;
+    border-radius: 999px;
+    margin-top: 6px;
+  }
+  .delta-pill.up { background: var(--verde-soft); color: var(--verde); }
+  .delta-pill.down { background: var(--rojo-soft); color: var(--rojo); }
+  .delta-pill.neutral { background: var(--line-2); color: var(--muted); }
+
+  @media (max-width: 767px) {
+    .drawer { width: 100%; max-width: 100%; border-radius: 0; }
+    .drawer-header { padding: 16px 18px; }
+    .drawer-body { padding: 18px; gap: 16px; }
+    .drawer-footer {
+      padding: 14px 18px;
+      flex-direction: column-reverse;
+      align-items: stretch;
+      gap: 10px;
+    }
+    .footer-hint { display: none; }
+    .footer-actions {
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      gap: 8px;
+    }
+    .footer-actions .btn {
+      padding: 11px;
+      text-align: center;
+      justify-content: center;
+    }
+    .drawer-title { font-size: 19px; }
+    .celebration { padding: 18px 16px; }
+    .celebration-title { font-size: 19px; }
+    .field-row { grid-template-columns: 1fr; gap: 14px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-page">Ficha del lead detrás</div>
+<div class="backdrop"></div>
+
+<div class="drawer">
+  <div class="drawer-header">
+    <div>
+      <div class="drawer-title">Cerrar el <em>ganado</em></div>
+      <div class="drawer-sub">Confirmá los detalles del cierre de <strong>Constructora Aliaga</strong></div>
+    </div>
+    <button class="drawer-close" aria-label="Cerrar">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+  </div>
+
+  <div class="drawer-body">
+
+    <!-- Celebración -->
+    <div class="celebration">
+      <div class="check-circle">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><path d="m5 12 5 5 9-11"/></svg>
+      </div>
+      <div class="celebration-title">¡Un <em>cierre más</em> para el mes!</div>
+      <div class="celebration-sub">Tardó <strong>28 días</strong> desde el primer contacto.</div>
+    </div>
+
+    <!-- Resumen del lead -->
+    <div class="lead-summary">
+      <div class="summary-name">Constructora Aliaga</div>
+      <div class="summary-meta-right">responsable: Mariana</div>
+      <div class="summary-meta">Recurrente · 6 meses · Formulario web</div>
+      <div class="summary-meta-right">valor estimado: USD 4.800</div>
+    </div>
+
+    <!-- Valor final (puede diferir del estimado) -->
+    <div class="field">
+      <div class="field-label">
+        <span>¿Por cuánto cerraste?</span>
+        <span class="field-hint">a veces difiere del estimado</span>
+      </div>
+      <div class="input-with-prefix">
+        <span class="input-prefix">USD</span>
+        <input class="input" type="text" value="5.200" />
+      </div>
+      <span class="delta-pill up">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m18 15-6-6-6 6"/></svg>
+        +USD 400 vs estimado
+      </span>
+    </div>
+
+    <!-- Fecha de cierre -->
+    <div class="field">
+      <div class="field-label">
+        <span>Fecha de cierre</span>
+      </div>
+      <div class="field-row">
+        <input class="input" type="text" value="Hoy, 26 de mayo" />
+        <input class="input" type="text" value="Recurrente desde 1 jun" />
+      </div>
+    </div>
+
+    <!-- Nota del cierre -->
+    <div class="field">
+      <div class="field-label">
+        <span>Comentario del cierre</span>
+        <span class="field-hint">opcional, te ayuda a recordar</span>
+      </div>
+      <textarea class="input" placeholder="Ej: Cerramos con descuento del 15% por pago anticipado. Empieza el 1 de junio con visitas semanales."></textarea>
+    </div>
+
+  </div>
+
+  <div class="drawer-footer">
+    <span class="footer-hint"><kbd>⌘</kbd><kbd>↵</kbd> confirmar</span>
+    <div class="footer-actions">
+      <button class="btn">Cancelar</button>
+      <button class="btn btn-success">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m5 12 5 5 9-11"/></svg>
+        Confirmar ganado
+      </button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

@@ -9,21 +9,48 @@ export type DrawerKind =
   | "sidebar"
   | "agenda"
   | "nuevo-lead"
-  | "registrar-contacto";
+  | "registrar-contacto"
+  | "editar-lead"
+  | "reasignar"
+  | "marcar-perdido"
+  | "confirmar-ganado";
 
 type RegistrarContactoData = { leadId: string; leadNombre: string };
+
+// Payload compartido por los 4 drawers que actúan sobre un lead específico.
+// Cada drawer lee solo los campos que necesita; el resto puede ser null.
+export type LeadActionData = {
+  leadId: string;
+  leadNombre: string;
+  estadoActual: string;
+  // Snapshot opcional para evitar refetch dentro del drawer.
+  // Si está null, el form puede pedir los datos por sí mismo.
+  origen?: string | null;
+  origen_detalle?: string | null;
+  valor_estimado?: number | null;
+  tipo_negocio?: string | null;
+  meses_compromiso?: number | null;
+  proximo_paso?: string | null;
+  proximo_paso_fecha?: string | null;
+  responsable_id?: string | null;
+  responsable_nombre?: string | null;
+};
 
 type DrawerState = {
   active: DrawerKind | null;
   registrarContactoData: RegistrarContactoData | null;
+  leadActionData: LeadActionData | null;
 
   openSidebar: () => void;
   openAgenda: () => void;
   openNuevoLead: () => void;
   openRegistrarContacto: (data: RegistrarContactoData) => void;
+  openEditarLead: (data: LeadActionData) => void;
+  openReasignar: (data: LeadActionData) => void;
+  openMarcarPerdido: (data: LeadActionData) => void;
+  openConfirmarGanado: (data: LeadActionData) => void;
   closeAll: () => void;
 
-  // Helper: ¿está abierto este drawer?
   isOpen: (kind: DrawerKind) => boolean;
 };
 
@@ -33,35 +60,50 @@ export function DrawerProvider({ children }: { children: React.ReactNode }) {
   const [active, setActive] = useState<DrawerKind | null>(null);
   const [registrarContactoData, setRegistrarContactoData] =
     useState<RegistrarContactoData | null>(null);
+  const [leadActionData, setLeadActionData] = useState<LeadActionData | null>(null);
 
   const value = useMemo<DrawerState>(
     () => ({
       active,
       registrarContactoData,
+      leadActionData,
       openSidebar: () => {
-        setRegistrarContactoData(null);
         setActive("sidebar");
       },
       openAgenda: () => {
-        setRegistrarContactoData(null);
         setActive("agenda");
       },
       openNuevoLead: () => {
-        setRegistrarContactoData(null);
         setActive("nuevo-lead");
       },
       openRegistrarContacto: (data) => {
         setRegistrarContactoData(data);
         setActive("registrar-contacto");
       },
+      openEditarLead: (data) => {
+        setLeadActionData(data);
+        setActive("editar-lead");
+      },
+      openReasignar: (data) => {
+        setLeadActionData(data);
+        setActive("reasignar");
+      },
+      openMarcarPerdido: (data) => {
+        setLeadActionData(data);
+        setActive("marcar-perdido");
+      },
+      openConfirmarGanado: (data) => {
+        setLeadActionData(data);
+        setActive("confirmar-ganado");
+      },
       closeAll: () => {
         setActive(null);
-        // Mantener registrarContactoData para que el componente termine de
-        // animar la salida sin perder el lead. Se limpia al abrir otro.
+        // Mantenemos los datos de acción para que la animación de salida
+        // se complete sin perder el lead. Se sobreescriben al abrir otro.
       },
       isOpen: (kind) => active === kind,
     }),
-    [active, registrarContactoData],
+    [active, registrarContactoData, leadActionData],
   );
 
   // Escape cierra el drawer activo.

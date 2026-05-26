@@ -1,11 +1,16 @@
 import { AgendaPanel } from "@/components/AgendaPanel";
 import { Backdrop } from "@/components/Backdrop";
+import { ConfirmarGanadoDrawer } from "@/components/ConfirmarGanadoLauncher";
 import { DrawerProvider } from "@/components/drawer-context";
+import { EditarLeadDrawer } from "@/components/EditarLeadLauncher";
+import { MarcarPerdidoDrawer } from "@/components/MarcarPerdidoLauncher";
 import { NuevoLeadDrawer } from "@/components/NuevoLeadLauncher";
+import { ReasignarDrawer } from "@/components/ReasignarLauncher";
 import { RegistrarContactoDrawer } from "@/components/RegistrarContactoLauncher";
 import { SidebarLeft, type SidebarCounts } from "@/components/SidebarLeft";
 import { TopbarMobile } from "@/components/TopbarMobile";
 import type { CurrentUser } from "@/lib/auth";
+import { getComercialesConMetricas } from "@/lib/queries";
 import type { EventoAgenda } from "@/lib/types";
 
 interface DashboardLayoutProps {
@@ -26,7 +31,7 @@ const DEFAULT_MAIN =
 // La agenda y los forms de Nuevo lead / Registrar contacto viven fuera del
 // grid como overlays globales. Esto unifica el UX en todos los breakpoints
 // (todo es drawer, no hay sticky/panel mixto).
-export function DashboardLayout({
+export async function DashboardLayout({
   agendaEvents,
   sidebarCounts,
   cierreMes,
@@ -34,6 +39,11 @@ export function DashboardLayout({
   mainClassName = DEFAULT_MAIN,
   children,
 }: DashboardLayoutProps) {
+  // Comerciales con métricas — los necesita el drawer de Reasignar.
+  // Una sola query por render del layout; el resto de drawers no requieren
+  // datos extra del server.
+  const comerciales = await getComercialesConMetricas();
+
   return (
     <DrawerProvider>
       <TopbarMobile agendaCount={agendaEvents.length} />
@@ -48,6 +58,10 @@ export function DashboardLayout({
       <AgendaPanel events={agendaEvents} cierreMes={cierreMes} />
       <NuevoLeadDrawer />
       <RegistrarContactoDrawer />
+      <EditarLeadDrawer />
+      <ReasignarDrawer comerciales={comerciales} />
+      <MarcarPerdidoDrawer />
+      <ConfirmarGanadoDrawer />
     </DrawerProvider>
   );
 }

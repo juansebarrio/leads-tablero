@@ -13,12 +13,14 @@ const ORDEN: Estado[] = [
   "ganado",
 ];
 
+// 'perdido' nunca aparece en esta barra (los terminales no se grafican).
 const NOMBRE_ESTADO: Record<Estado, string> = {
   nuevo: "Nuevos",
   conversacion: "En conversación",
   propuesta: "Propuesta",
   cierre: "Cierre",
   ganado: "Ganados",
+  perdido: "Perdidos",
 };
 
 // Inline background por estado: usamos las CSS vars del @theme para no
@@ -29,6 +31,7 @@ const BG_ESTADO: Record<Estado, string> = {
   propuesta: "var(--color-violeta)",
   cierre: "var(--color-coral)",
   ganado: "var(--color-ink)",
+  perdido: "var(--color-rojo)",
 };
 
 export function PipelineBar({ data }: PipelineBarProps) {

@@ -17,12 +17,15 @@ interface ColumnHeaderProps {
 }
 
 // Barra accent que sube por arriba de cada columna.
+// 'perdido' nunca se renderiza como columna del kanban; lo incluimos en el
+// Record por completitud del tipo Estado.
 const ACCENT_BG: Record<Estado, string> = {
   nuevo: "var(--color-azul-soft)",
   conversacion: "var(--color-azul)",
   propuesta: "var(--color-violeta)",
   cierre: "var(--color-coral)",
   ganado: "var(--color-verde)",
+  perdido: "var(--color-rojo)",
 };
 
 export function ColumnHeader({

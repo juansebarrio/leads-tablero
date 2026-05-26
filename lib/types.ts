@@ -3,7 +3,21 @@
 // Hasta que tengamos `pnpm db:types` corriendo, esta es la fuente de verdad.
 
 export type Origen = "formulario" | "referido" | "linkedin" | "whatsapp";
-export type Estado = "nuevo" | "conversacion" | "propuesta" | "cierre" | "ganado";
+export type Estado =
+  | "nuevo"
+  | "conversacion"
+  | "propuesta"
+  | "cierre"
+  | "ganado"
+  | "perdido";
+
+export type MotivoPerdida =
+  | "precio"
+  | "timing"
+  | "competencia"
+  | "no_respondio"
+  | "cambio_necesidad"
+  | "otro";
 export type TipoNegocio = "recurrente" | "proyecto";
 export type Temperatura = "hot" | "warm" | "med" | "cool";
 export type EstadoOportunidad =
@@ -17,6 +31,11 @@ export type CanalContacto =
   | "whatsapp"
   | "reunion"
   | "linkedin";
+
+// Canales internos: no aparecen como "Registrar contacto" pero sí en la
+// timeline de la ficha. Sirven para auditoría (quién cambió qué).
+export type CanalInterno = "cambio_estado" | "reasignacion";
+export type CanalContactoExtendido = CanalContacto | CanalInterno;
 export type Modalidad = "meet" | "zoom" | "whatsapp" | "presencial";
 export type AgendaTag =
   | "cierre_semana"
@@ -69,6 +88,11 @@ export type Lead = {
   proximo_paso_fecha: string | null;
   temperatura: Temperatura;
   estado_oportunidad: EstadoOportunidad | null;
+  motivo_perdida?: MotivoPerdida | null;
+  detalle_perdida?: string | null;
+  valor_final?: number | null;
+  fecha_cierre?: string | null;
+  comentario_cierre?: string | null;
 };
 
 // Devuelto por v_leds_frios y v_oportunidades_dia (lead + comercial flattened).

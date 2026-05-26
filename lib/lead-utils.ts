@@ -2,6 +2,7 @@
 
 import type { Estado } from "@/lib/types";
 
+// Estados que progresan en el pipeline (sin 'perdido', que es terminal).
 export const ORDEN_ESTADOS: Estado[] = [
   "nuevo",
   "conversacion",
@@ -16,6 +17,7 @@ export const ESTADO_LABEL: Record<Estado, string> = {
   propuesta: "Propuesta",
   cierre: "Cierre",
   ganado: "Ganado",
+  perdido: "Perdido",
 };
 
 export function estadoSiguiente(

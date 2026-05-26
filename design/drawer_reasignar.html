@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>JS80 · Drawer · Reasignar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F7F6F2; --panel: #FFFFFF; --panel-2: #FBFAF6;
+    --ink: #0E0E12; --ink-2: #2A2A33; --muted: #6B6B75; --muted-2: #9A9AA3;
+    --line: #E8E6DE; --line-2: #F0EEE6;
+    --azul: #6B8CFF; --azul-soft: #EDF1FF;
+    --violeta: #8B6FFF; --violeta-soft: #F1ECFF;
+    --turquesa: #5DC7E0; --coral: #FF8AA0;
+    --rojo: #C8362E; --rojo-soft: #FBEAE7;
+    --amarillo: #B8860B; --amarillo-soft: #FBF3DB;
+    --verde: #3E8A5A; --verde-soft: #E6F1EB;
+    --display: 'Fraunces', Georgia, serif;
+    --body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    font-family: var(--body); color: var(--ink); background: var(--bg);
+    font-size: 13px; line-height: 1.5; -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+  svg { display: block; }
+
+  .bg-page {
+    padding: 40px; color: var(--muted-2); font-size: 12px;
+    text-align: center; font-family: var(--display); padding-top: 30vh;
+  }
+  .backdrop { position: fixed; inset: 0; background: rgba(14, 14, 18, 0.4); z-index: 60; }
+
+  .drawer {
+    position: fixed; top: 0; right: 0; height: 100vh;
+    width: 480px; max-width: 100%; background: var(--panel); z-index: 70;
+    box-shadow: -8px 0 32px rgba(14,14,18,0.12);
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  .drawer-header {
+    padding: 22px 24px 18px; border-bottom: 1px solid var(--line);
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;
+  }
+  .drawer-title {
+    font-family: var(--display); font-weight: 500;
+    font-variation-settings: "SOFT" 100, "opsz" 144;
+    font-size: 22px; line-height: 1.15; letter-spacing: -0.02em;
+    color: var(--ink); margin-bottom: 4px;
+  }
+  .drawer-title em { font-style: italic; color: var(--violeta); font-weight: 500; }
+  .drawer-sub { font-size: 12px; color: var(--muted); }
+  .drawer-sub strong { color: var(--ink-2); font-weight: 600; }
+  .drawer-close {
+    background: transparent; border: 1px solid var(--line);
+    width: 32px; height: 32px; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--muted); flex-shrink: 0;
+  }
+
+  .drawer-body {
+    flex: 1; overflow-y: auto; padding: 22px 24px;
+    display: flex; flex-direction: column; gap: 18px;
+  }
+
+  .drawer-footer {
+    padding: 16px 24px; border-top: 1px solid var(--line); background: var(--panel-2);
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  }
+  .footer-hint { font-size: 11.5px; color: var(--muted); }
+  .footer-hint kbd {
+    font-family: var(--body); font-size: 10.5px;
+    background: white; border: 1px solid var(--line);
+    padding: 1px 6px; border-radius: 3px; color: var(--muted); margin: 0 2px;
+  }
+  .footer-actions { display: flex; gap: 10px; }
+  .btn {
+    border: 1px solid var(--line); background: var(--panel); color: var(--ink-2);
+    padding: 9px 16px; border-radius: 6px;
+    font-family: var(--body); font-weight: 500; font-size: 13px; cursor: pointer;
+  }
+  .btn-primary { background: var(--ink); color: white; border-color: var(--ink); }
+  .btn-primary:hover { background: var(--violeta); border-color: var(--violeta); }
+
+  .field { display: flex; flex-direction: column; gap: 7px; }
+  .field-label {
+    font-size: 11.5px; color: var(--ink-2); font-weight: 600;
+    display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+  }
+  .field-hint { font-size: 11px; color: var(--muted-2); font-weight: 400; }
+  .input {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 6px;
+    padding: 10px 12px; font-family: var(--body); font-size: 13.5px;
+    color: var(--ink); width: 100%;
+  }
+  .input:focus { outline: none; border-color: var(--violeta); box-shadow: 0 0 0 3px var(--violeta-soft); }
+  textarea.input { min-height: 70px; resize: vertical; line-height: 1.5; }
+
+  /* Estado actual: muestra de quién es ahora */
+  .current-owner {
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .current-label {
+    font-size: 10.5px;
+    color: var(--muted);
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .current-name {
+    font-family: var(--display);
+    font-weight: 500;
+    font-size: 15px;
+    color: var(--ink);
+  }
+  .current-meta {
+    font-size: 11.5px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+  .owner-avatar {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: white;
+    font-size: 13px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .owner-avatar.small { width: 28px; height: 28px; font-size: 11px; }
+  .av-ml { background: linear-gradient(135deg, #8B6FFF, #5DC7E0); }
+  .av-dt { background: linear-gradient(135deg, #FF8AA0, #FFB088); }
+  .av-sm { background: linear-gradient(135deg, #6B8CFF, #8B6FFF); }
+  .av-na { background: var(--line); color: var(--muted); border: 1px dashed var(--muted-2); }
+
+  /* Lista de comerciales para elegir */
+  .owner-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .owner-pick {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: left;
+    font-family: var(--body);
+    color: var(--ink);
+  }
+  .owner-pick:hover {
+    border-color: var(--ink-2);
+    background: var(--panel-2);
+  }
+  .owner-pick.selected {
+    background: var(--violeta-soft);
+    border-color: var(--violeta);
+  }
+  .owner-pick-info { flex: 1; min-width: 0; }
+  .owner-pick-name {
+    font-weight: 600;
+    color: var(--ink);
+    font-size: 13.5px;
+    margin-bottom: 2px;
+  }
+  .owner-pick.selected .owner-pick-name { color: var(--violeta); }
+  .owner-pick-load {
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .owner-pick.selected .owner-pick-load { color: var(--violeta); opacity: 0.85; }
+  .owner-pick-load strong { color: var(--ink-2); font-weight: 600; }
+  .owner-pick.selected .owner-pick-load strong { color: var(--violeta); }
+  .owner-pick-check {
+    color: var(--violeta);
+    opacity: 0;
+    flex-shrink: 0;
+  }
+  .owner-pick.selected .owner-pick-check { opacity: 1; }
+  .owner-pick.current {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .owner-pick.current::after {
+    content: "actual";
+    font-size: 10px;
+    color: var(--muted);
+    margin-left: auto;
+    background: var(--line-2);
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  /* Hint de carga */
+  .load-hint {
+    background: var(--amarillo-soft);
+    border: 1px solid #EBD9A1;
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 11.5px;
+    color: var(--amarillo);
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    line-height: 1.45;
+  }
+  .load-hint svg { flex-shrink: 0; margin-top: 1px; }
+
+  @media (max-width: 767px) {
+    .drawer { width: 100%; max-width: 100%; border-radius: 0; }
+    .drawer-header { padding: 16px 18px; }
+    .drawer-body { padding: 18px; gap: 16px; }
+    .drawer-footer {
+      padding: 14px 18px;
+      flex-direction: column-reverse;
+      align-items: stretch;
+      gap: 10px;
+    }
+    .footer-hint { display: none; }
+    .footer-actions {
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      gap: 8px;
+    }
+    .footer-actions .btn {
+      padding: 11px;
+      text-align: center;
+      justify-content: center;
+    }
+    .drawer-title { font-size: 19px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-page">Ficha del lead detrás</div>
+<div class="backdrop"></div>
+
+<div class="drawer">
+  <div class="drawer-header">
+    <div>
+      <div class="drawer-title">Reasignar <em>responsable</em></div>
+      <div class="drawer-sub">Movés <strong>Constructora Aliaga</strong> a otro comercial</div>
+    </div>
+    <button class="drawer-close" aria-label="Cerrar">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+  </div>
+
+  <div class="drawer-body">
+
+    <!-- Estado actual -->
+    <div>
+      <div class="current-label">Actualmente lo lleva</div>
+      <div class="current-owner">
+        <div class="owner-avatar av-ml">ML</div>
+        <div>
+          <div class="current-name">Mariana López</div>
+          <div class="current-meta">18 leads activos · 91% de su meta</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Selector de nuevo responsable -->
+    <div class="field">
+      <div class="field-label">
+        <span>¿A quién lo pasamos?</span>
+      </div>
+      <div class="owner-list">
+        <button class="owner-pick current" type="button">
+          <div class="owner-avatar small av-ml">ML</div>
+          <div class="owner-pick-info">
+            <div class="owner-pick-name">Mariana López</div>
+            <div class="owner-pick-load">18 leads · <strong>en racha</strong></div>
+          </div>
+        </button>
+        <button class="owner-pick selected" type="button">
+          <div class="owner-avatar small av-sm">SM</div>
+          <div class="owner-pick-info">
+            <div class="owner-pick-name">Sofía Martínez</div>
+            <div class="owner-pick-load">10 leads · <strong>menos cargada</strong></div>
+          </div>
+          <svg class="owner-pick-check" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m5 12 5 5 9-11"/></svg>
+        </button>
+        <button class="owner-pick" type="button">
+          <div class="owner-avatar small av-dt">DT</div>
+          <div class="owner-pick-info">
+            <div class="owner-pick-name">Diego Tovar</div>
+            <div class="owner-pick-load">22 leads · <strong>sobrecargado</strong></div>
+          </div>
+        </button>
+        <button class="owner-pick" type="button">
+          <div class="owner-avatar small av-na">?</div>
+          <div class="owner-pick-info">
+            <div class="owner-pick-name">Sin asignar</div>
+            <div class="owner-pick-load">El lead queda libre</div>
+          </div>
+        </button>
+      </div>
+    </div>
+
+    <!-- Hint de carga -->
+    <div class="load-hint">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      Sofía es la opción más equilibrada hoy. Tiene capacidad y el mejor ratio del mes.
+    </div>
+
+    <!-- Nota opcional -->
+    <div class="field">
+      <div class="field-label">
+        <span>¿Por qué lo reasignás?</span>
+        <span class="field-hint">opcional, queda en el historial</span>
+      </div>
+      <textarea class="input" placeholder="Ej: Sofía tiene experiencia con clínicas y Mariana está sobrecargada esta semana"></textarea>
+    </div>
+
+  </div>
+
+  <div class="drawer-footer">
+    <span class="footer-hint"><kbd>⌘</kbd><kbd>↵</kbd> confirmar</span>
+    <div class="footer-actions">
+      <button class="btn">Cancelar</button>
+      <button class="btn btn-primary">Reasignar a Sofía</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

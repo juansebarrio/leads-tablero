@@ -81,8 +81,9 @@ export async function getLeadConDetalle(
       .from("contactos")
       .select("*")
       .eq("lead_id", id)
-      // Cambios de estado del kanban no se muestran en el historial visible.
-      .neq("canal", "cambio_estado")
+      // Cambios de estado y reasignaciones son eventos internos del sistema.
+      // Se guardan para auditoría pero no se muestran en la timeline visible.
+      .not("canal", "in", "(cambio_estado,reasignacion)")
       .order("fecha", { ascending: false }),
     supabase
       .from("agenda")
