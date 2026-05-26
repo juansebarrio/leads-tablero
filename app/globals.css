@@ -1,1 +1,45 @@
 @import "tailwindcss";
+
+@theme {
+  /* Neutros */
+  --color-bg: #F7F6F2;
+  --color-panel: #FFFFFF;
+  --color-panel-2: #FBFAF6;
+  --color-ink: #0E0E12;
+  --color-ink-2: #2A2A33;
+  --color-muted: #6B6B75;
+  --color-muted-2: #9A9AA3;
+  --color-line: #E8E6DE;
+  --color-line-2: #F0EEE6;
+
+  /* Marca JS80 */
+  --color-azul: #6B8CFF;
+  --color-azul-soft: #EDF1FF;
+  --color-violeta: #8B6FFF;
+  --color-violeta-soft: #F1ECFF;
+  --color-turquesa: #5DC7E0;
+  --color-turquesa-soft: #E5F4F9;
+  --color-coral: #FF8AA0;
+
+  /* Semánticos */
+  --color-rojo: #C8362E;
+  --color-rojo-soft: #FBEAE7;
+  --color-amarillo: #B8860B;
+  --color-amarillo-soft: #FBF3DB;
+  --color-verde: #3E8A5A;
+  --color-verde-soft: #E6F1EB;
+
+  /* Fuentes (las variables se cargan en el paso 5 via next/font) */
+  --font-display: var(--font-fraunces);
+  --font-body: var(--font-inter);
+}
+
+@layer base {
+  body {
+    background: var(--color-bg);
+    color: var(--color-ink);
+    font-family: var(--font-body);
+    font-size: 13px;
+    -webkit-font-smoothing: antialiased;
+  }
+}
