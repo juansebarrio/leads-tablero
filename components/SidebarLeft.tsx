@@ -9,6 +9,7 @@ import {
   MessageSquare,
   Search,
   Target,
+  Users,
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
@@ -65,6 +66,7 @@ export function SidebarLeft({ counts = {}, currentUser }: SidebarLeftProps) {
       count: counts.agenda ?? 0,
       onClick: openAgenda,
     },
+    { label: "Equipo", icon: Users, href: "/equipo" },
     {
       label: "Pipeline",
       icon: BarChart3,
