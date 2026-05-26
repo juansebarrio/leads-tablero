@@ -30,6 +30,9 @@ import type { Comercial, Estado, LeadKanban } from "@/lib/types";
 interface PipelineBoardProps {
   initialLeads: LeadKanban[];
   comerciales: Comercial[];
+  // Si viene un id de comercial, arranca con ese filtro preseleccionado
+  // (útil para drill-down desde /equipo).
+  initialComercialId?: string | null;
 }
 
 const ORDEN: { estado: Estado; nombre: string; sub: string }[] = [
@@ -47,12 +50,17 @@ const ORDEN: { estado: Estado; nombre: string; sub: string }[] = [
 export function PipelineBoard({
   initialLeads,
   comerciales,
+  initialComercialId,
 }: PipelineBoardProps) {
   const router = useRouter();
   const [leads, setLeads] = useState(initialLeads);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [filtro, setFiltro] = useState<FiltroComercial>({ tipo: "todos" });
+  const [filtro, setFiltro] = useState<FiltroComercial>(() =>
+    initialComercialId
+      ? { tipo: "comercial", id: initialComercialId }
+      : { tipo: "todos" },
+  );
   const [, startTransition] = useTransition();
 
   const sensors = useSensors(

@@ -6,12 +6,9 @@ import {
   CheckCircle2,
   Clock,
   FileText,
-  Layers,
   MessageSquare,
   Search,
   Target,
-  TrendingUp,
-  Users,
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
@@ -80,11 +77,8 @@ export function SidebarLeft({ counts = {}, currentUser }: SidebarLeftProps) {
     },
   ];
 
-  const inteligencia: NavItem[] = [
-    { label: "Patrones", icon: Layers, count: counts.patrones ?? 0 },
-    { label: "Conversión", icon: TrendingUp },
-    { label: "Equipo", icon: Users },
-  ];
+  // Sección "Inteligencia" temporalmente oculta del menú (Patrones / Conversión
+  // / Equipo). Las rutas siguen vivas: /equipo sigue accesible por URL.
 
   return (
     <aside
@@ -132,12 +126,6 @@ export function SidebarLeft({ counts = {}, currentUser }: SidebarLeftProps) {
       <NavSection
         title="Pipeline"
         items={pipeline}
-        pathname={pathname}
-        onItemClick={closeAll}
-      />
-      <NavSection
-        title="Inteligencia"
-        items={inteligencia}
         pathname={pathname}
         onItemClick={closeAll}
       />

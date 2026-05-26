@@ -1,0 +1,778 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>JS80 · Equipo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F7F6F2;
+    --panel: #FFFFFF;
+    --panel-2: #FBFAF6;
+    --ink: #0E0E12;
+    --ink-2: #2A2A33;
+    --muted: #6B6B75;
+    --muted-2: #9A9AA3;
+    --line: #E8E6DE;
+    --line-2: #F0EEE6;
+    --azul: #6B8CFF;
+    --azul-soft: #EDF1FF;
+    --violeta: #8B6FFF;
+    --violeta-soft: #F1ECFF;
+    --turquesa: #5DC7E0;
+    --turquesa-soft: #E5F4F9;
+    --coral: #FF8AA0;
+    --rojo: #C8362E;
+    --rojo-soft: #FBEAE7;
+    --amarillo: #B8860B;
+    --amarillo-soft: #FBF3DB;
+    --verde: #3E8A5A;
+    --verde-soft: #E6F1EB;
+    --display: 'Fraunces', Georgia, serif;
+    --body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    font-family: var(--body);
+    color: var(--ink);
+    background: var(--bg);
+    font-size: 13px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  svg { display: block; }
+
+  .app {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    min-height: 100vh;
+  }
+
+  /* SIDEBAR — igual */
+  .sidebar {
+    background: var(--panel);
+    border-right: 1px solid var(--line);
+    padding: 22px 18px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+  }
+  .brand-block {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--line);
+  }
+  .nucleus {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    background: conic-gradient(from 200deg, #FF8AA0 0deg, #FFB088 60deg, #6B8CFF 160deg, #8B6FFF 230deg, #5DC7E0 310deg, #FF8AA0 360deg);
+    flex-shrink: 0;
+  }
+  .brand-name { font-family: var(--display); font-weight: 600; font-size: 17px; letter-spacing: -0.01em; line-height: 1; }
+  .brand-sub { font-size: 10.5px; color: var(--muted); margin-top: 3px; }
+  .nav-title { font-size: 10.5px; font-weight: 600; color: var(--muted-2); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 6px; padding: 0 6px; }
+  .nav-item { display: flex; align-items: center; gap: 9px; padding: 6px 8px; margin: 1px 0; border-radius: 6px; font-size: 12.5px; color: var(--ink-2); cursor: pointer; }
+  .nav-item .nav-icon { width: 14px; height: 14px; color: var(--muted); flex-shrink: 0; }
+  .nav-item:hover { background: var(--line-2); }
+  .nav-item.active { background: var(--ink); color: white; font-weight: 500; }
+  .nav-item.active .nav-icon { color: white; }
+  .nav-item.active .nav-count { background: rgba(255,255,255,0.16); color: white; }
+  .nav-count { margin-left: auto; font-size: 10.5px; background: var(--line-2); color: var(--muted); padding: 1px 6px; border-radius: 999px; font-weight: 500; }
+  .nav-count.alert { background: var(--rojo-soft); color: var(--rojo); }
+  .sidebar-foot { margin-top: auto; padding-top: 14px; border-top: 1px solid var(--line); display: flex; align-items: center; gap: 10px; }
+  .user-mini-avatar { width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #8B6FFF, #5DC7E0); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 11px; }
+  .user-mini-name { font-weight: 600; color: var(--ink); font-size: 12px; }
+  .user-mini-role { color: var(--muted); font-size: 10.5px; }
+
+  /* MAIN */
+  .main { padding: 28px 32px 60px; min-width: 0; }
+
+  /* HEADER de página */
+  .page-header { margin-bottom: 28px; }
+  .page-eyebrow {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .page-title {
+    font-family: var(--display);
+    font-weight: 500;
+    font-variation-settings: "SOFT" 100, "opsz" 144;
+    font-size: 36px;
+    line-height: 1.05;
+    letter-spacing: -0.025em;
+    color: var(--ink);
+    margin-bottom: 10px;
+  }
+  .page-title em {
+    font-style: italic;
+    color: var(--violeta);
+    font-weight: 500;
+  }
+  .page-sub {
+    font-size: 13.5px;
+    color: var(--muted);
+  }
+  .page-sub strong { color: var(--ink); font-weight: 600; }
+
+  /* BANDA DE MÉTRICAS GLOBALES */
+  .global-strip {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 22px 26px;
+    margin-bottom: 32px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+    position: relative;
+  }
+  .global-strip::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 26px;
+    right: 26px;
+    height: 3px;
+    background: linear-gradient(90deg, var(--azul) 0%, var(--violeta) 40%, var(--coral) 70%, var(--verde) 100%);
+    border-radius: 0 0 3px 3px;
+  }
+  .global-item { min-width: 0; }
+  .global-label {
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .global-value {
+    font-family: var(--display);
+    font-weight: 600;
+    font-variation-settings: "opsz" 144;
+    font-size: 28px;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    color: var(--ink);
+    margin-bottom: 4px;
+  }
+  .global-value .delta {
+    font-family: var(--body);
+    font-weight: 500;
+    font-size: 12.5px;
+    margin-left: 6px;
+  }
+  .global-value .delta.up { color: var(--verde); }
+  .global-value .delta.down { color: var(--rojo); }
+  .global-sub {
+    font-size: 11.5px;
+    color: var(--muted);
+  }
+
+  /* GRID DE COMERCIALES */
+  .team-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+
+  /* CARD DE COMERCIAL */
+  .comercial {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 22px;
+    cursor: pointer;
+    transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    position: relative;
+    text-decoration: none;
+    color: inherit;
+  }
+  .comercial * { text-decoration: none; }
+  .comercial:hover {
+    border-color: var(--ink-2);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px rgba(14,14,18,0.06), 0 2px 8px rgba(14,14,18,0.04);
+  }
+
+  /* Header de la card */
+  .comercial-head {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .comercial-avatar {
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: white;
+    font-weight: 700;
+    font-size: 16px;
+    font-family: var(--body);
+    flex-shrink: 0;
+  }
+  .av-ml { background: linear-gradient(135deg, #8B6FFF, #5DC7E0); }
+  .av-dt { background: linear-gradient(135deg, #FF8AA0, #FFB088); }
+  .av-sm { background: linear-gradient(135deg, #6B8CFF, #8B6FFF); }
+  .comercial-info { min-width: 0; flex: 1; }
+  .comercial-name {
+    font-family: var(--display);
+    font-weight: 500;
+    font-variation-settings: "opsz" 144;
+    font-size: 19px;
+    letter-spacing: -0.015em;
+    color: var(--ink);
+    line-height: 1.15;
+    margin-bottom: 2px;
+  }
+  .comercial-role {
+    font-size: 11.5px;
+    color: var(--muted);
+  }
+  .open-chevron {
+    color: var(--muted-2);
+    flex-shrink: 0;
+    transition: transform 0.18s;
+  }
+  .comercial:hover .open-chevron {
+    color: var(--violeta);
+    transform: translateX(2px);
+  }
+
+  /* META vs progreso */
+  .meta-block {
+    background: var(--panel-2);
+    border: 1px solid var(--line-2);
+    border-radius: 8px;
+    padding: 12px 14px;
+  }
+  .meta-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 8px;
+    gap: 8px;
+  }
+  .meta-label {
+    font-size: 10.5px;
+    color: var(--muted);
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .meta-value {
+    font-size: 12.5px;
+    color: var(--ink-2);
+  }
+  .meta-value strong {
+    color: var(--ink);
+    font-weight: 600;
+    font-family: var(--display);
+    font-variation-settings: "opsz" 144;
+  }
+  .meta-bar {
+    height: 6px;
+    background: var(--line);
+    border-radius: 3px;
+    overflow: hidden;
+    position: relative;
+  }
+  .meta-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.4s;
+  }
+  .meta-fill.on-track { background: linear-gradient(90deg, var(--violeta), var(--azul)); }
+  .meta-fill.behind { background: linear-gradient(90deg, var(--amarillo), #E6A52B); }
+  .meta-fill.ahead { background: linear-gradient(90deg, var(--verde), #5BAE7A); }
+  .meta-percent {
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .meta-percent.on-track { color: var(--violeta); }
+  .meta-percent.behind { color: var(--amarillo); }
+  .meta-percent.ahead { color: var(--verde); }
+
+  /* MÉTRICAS (4 en grilla) */
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .metric {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .metric-label {
+    font-size: 10.5px;
+    color: var(--muted);
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .metric-value {
+    font-family: var(--display);
+    font-weight: 600;
+    font-variation-settings: "opsz" 144;
+    font-size: 22px;
+    letter-spacing: -0.018em;
+    color: var(--ink);
+    line-height: 1;
+  }
+  .metric-value.alert { color: var(--rojo); }
+  .metric-sub {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+  .metric-sub strong { color: var(--ink-2); font-weight: 600; }
+
+  /* INSIGHT por comercial */
+  .insight-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    line-height: 1.4;
+  }
+  .insight-pill.warn {
+    background: var(--amarillo-soft);
+    border: 1px solid #EBD9A1;
+    color: var(--amarillo);
+  }
+  .insight-pill.danger {
+    background: var(--rojo-soft);
+    border: 1px solid #F2C8C2;
+    color: var(--rojo);
+  }
+  .insight-pill.good {
+    background: var(--verde-soft);
+    border: 1px solid #C9E2D2;
+    color: var(--verde);
+  }
+  .insight-pill.neutral {
+    background: var(--violeta-soft);
+    border: 1px solid #D6CAFF;
+    color: var(--violeta);
+  }
+  .insight-pill svg { flex-shrink: 0; }
+  .insight-pill strong { font-weight: 700; }
+  .insight-pill .action {
+    margin-left: auto;
+    text-decoration: underline !important;
+    cursor: pointer;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  /* ============================================ */
+  /* RESPONSIVE                                    */
+  /* ============================================ */
+
+  /* TOPBAR (oculto en desktop) */
+  .topbar-mobile {
+    display: none;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: var(--panel);
+    border-bottom: 1px solid var(--line);
+    padding: 12px 16px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .tb-brand { display: flex; align-items: center; gap: 8px; }
+  .tb-brand-name { font-family: var(--display); font-weight: 600; font-size: 15px; letter-spacing: -0.01em; }
+  .tb-btn {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    width: 38px; height: 38px;
+    border-radius: 6px;
+    display: inline-flex; align-items: center; justify-content: center;
+    color: var(--ink-2);
+    cursor: pointer;
+    position: relative;
+  }
+  .tb-btn-count {
+    position: absolute;
+    top: -4px; right: -4px;
+    background: var(--rojo);
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    border-radius: 999px;
+    min-width: 16px; height: 16px;
+    padding: 0 4px;
+    display: flex; align-items: center; justify-content: center;
+    border: 2px solid var(--panel);
+  }
+  .backdrop { display: none; position: fixed; inset: 0; background: rgba(14, 14, 18, 0.4); z-index: 60; }
+  .backdrop.active { display: block; }
+
+  /* Desktop 1024-1279: cards a 3 cols pero más densas */
+  @media (max-width: 1279px) {
+    .main { padding: 24px 24px 60px; }
+    .global-strip { padding: 20px 22px; gap: 18px; }
+    .global-value { font-size: 24px; }
+    .comercial { padding: 18px; gap: 16px; }
+    .metric-value { font-size: 20px; }
+  }
+
+  /* Tablet 768-1023: grid 2 cols + sidebar drawer */
+  @media (max-width: 1023px) {
+    .app { grid-template-columns: 1fr; }
+    .sidebar {
+      position: fixed; top: 0; left: 0;
+      width: 260px; height: 100vh; z-index: 70;
+      transform: translateX(-100%);
+      transition: transform 0.25s ease;
+      box-shadow: 8px 0 32px rgba(14,14,18,0.08);
+    }
+    .sidebar.open { transform: translateX(0); }
+    .topbar-mobile { display: flex; }
+    .main { padding: 22px 24px 60px; }
+
+    .global-strip {
+      grid-template-columns: 1fr 1fr;
+      gap: 20px 24px;
+    }
+    .team-grid { grid-template-columns: 1fr 1fr; }
+  }
+
+  /* Mobile <768: todo apilado */
+  @media (max-width: 767px) {
+    .main { padding: 16px 16px 60px; }
+    .page-title { font-size: 26px; }
+    .page-sub { font-size: 12.5px; }
+
+    .global-strip {
+      grid-template-columns: 1fr 1fr;
+      padding: 16px;
+      gap: 18px 16px;
+    }
+    .global-value { font-size: 22px; }
+    .global-label { font-size: 10px; }
+
+    .team-grid { grid-template-columns: 1fr; gap: 12px; }
+    .comercial { padding: 18px; gap: 16px; }
+    .comercial-name { font-size: 17px; }
+    .metric-value { font-size: 19px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar-mobile">
+  <button class="tb-btn" id="open-sidebar" aria-label="Abrir menú">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+  </button>
+  <div class="tb-brand">
+    <div class="nucleus" style="width:24px;height:24px"></div>
+    <span class="tb-brand-name">js80</span>
+  </div>
+  <button class="tb-btn" id="open-agenda" aria-label="Ver agenda">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+    <span class="tb-btn-count">4</span>
+  </button>
+</header>
+
+<div class="backdrop" id="backdrop"></div>
+
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="brand-block">
+      <div class="nucleus"></div>
+      <div>
+        <div class="brand-name">js80</div>
+        <div class="brand-sub">Tablero de leads</div>
+      </div>
+    </div>
+
+    <div>
+      <div class="nav-title">Hoy</div>
+      <div class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 2v4M2 12h4M12 22v-4M22 12h-4"/></svg>
+        Atender hoy
+        <span class="nav-count alert">8</span>
+      </div>
+      <div class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+        Agenda
+        <span class="nav-count">4</span>
+      </div>
+    </div>
+
+    <div>
+      <div class="nav-title">Pipeline</div>
+      <div class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="6" height="18" rx="1"/><rect x="11" y="3" width="6" height="11" rx="1"/><rect x="19" y="3" width="2" height="14" rx="1"/></svg>
+        Pipeline
+      </div>
+      <div class="nav-item">Leads nuevos<span class="nav-count">6</span></div>
+      <div class="nav-item">En conversación<span class="nav-count">8</span></div>
+      <div class="nav-item">Propuestas<span class="nav-count">7</span></div>
+      <div class="nav-item">Cerrados<span class="nav-count">—</span></div>
+    </div>
+
+    <div>
+      <div class="nav-title">Inteligencia</div>
+      <div class="nav-item">Patrones<span class="nav-count">1</span></div>
+      <div class="nav-item">Conversión</div>
+      <div class="nav-item active">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.13a4 4 0 0 1 0 7.75M21 21v-2a4 4 0 0 0-3-3.87"/></svg>
+        Equipo
+      </div>
+    </div>
+
+    <div class="sidebar-foot">
+      <div class="user-mini-avatar">ML</div>
+      <div>
+        <div class="user-mini-name">Mariana López</div>
+        <div class="user-mini-role">Comercial</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- Header -->
+    <div class="page-header">
+      <div class="page-eyebrow">Equipo · Mayo 2026</div>
+      <h1 class="page-title">Cómo viene <em>el equipo</em>.</h1>
+      <div class="page-sub">
+        Tres comerciales activos · Meta del mes: <strong>USD 75.000</strong> en ganados
+      </div>
+    </div>
+
+    <!-- Banda de métricas globales -->
+    <div class="global-strip">
+      <div class="global-item">
+        <div class="global-label">Leads activos</div>
+        <div class="global-value">50</div>
+        <div class="global-sub">en el pipeline ahora</div>
+      </div>
+      <div class="global-item">
+        <div class="global-label">Pipeline total</div>
+        <div class="global-value">USD 187.400</div>
+        <div class="global-sub">en juego</div>
+      </div>
+      <div class="global-item">
+        <div class="global-label">Ganados del mes</div>
+        <div class="global-value">USD 51.000 <span class="delta up">+12%</span></div>
+        <div class="global-sub">3 leads cerrados</div>
+      </div>
+      <div class="global-item">
+        <div class="global-label">Ratio de cierre</div>
+        <div class="global-value">14% <span class="delta up">+2pp</span></div>
+        <div class="global-sub">últimos 90 días</div>
+      </div>
+    </div>
+
+    <!-- Grilla de comerciales -->
+    <div class="team-grid">
+
+      <!-- COMERCIAL 1 · Mariana -->
+      <a class="comercial" href="#" aria-label="Ver pipeline de Mariana">
+        <div class="comercial-head">
+          <div class="comercial-avatar av-ml">ML</div>
+          <div class="comercial-info">
+            <div class="comercial-name">Mariana López</div>
+            <div class="comercial-role">Comercial · 18 leads</div>
+          </div>
+          <svg class="open-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+        </div>
+
+        <div class="meta-block">
+          <div class="meta-header">
+            <span class="meta-label">Meta del mes</span>
+            <span class="meta-value">USD 18.300 / <strong>20.000</strong></span>
+          </div>
+          <div class="meta-bar">
+            <div class="meta-fill on-track" style="width: 91%"></div>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-top: 6px;">
+            <span class="meta-percent on-track">91%</span>
+            <span class="meta-percent" style="color: var(--muted); font-weight: 500;">faltan 6 días</span>
+          </div>
+        </div>
+
+        <div class="metrics-grid">
+          <div class="metric">
+            <span class="metric-label">Activos</span>
+            <span class="metric-value">18</span>
+            <span class="metric-sub"><strong>USD 64.200</strong></span>
+          </div>
+          <div class="metric">
+            <span class="metric-label">Ganados mes</span>
+            <span class="metric-value">2</span>
+            <span class="metric-sub"><strong>USD 18.300</strong></span>
+          </div>
+          <div class="metric">
+            <span class="metric-label">Ratio cierre</span>
+            <span class="metric-value">16%</span>
+            <span class="metric-sub">últimos 90 días</span>
+          </div>
+          <div class="metric">
+            <span class="metric-label">Leads frío</span>
+            <span class="metric-value">2</span>
+            <span class="metric-sub">en atención</span>
+          </div>
+        </div>
+
+        <div class="insight-pill good">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m5 12 5 5 9-11"/></svg>
+          <span>En racha. Le falta <strong>USD 1.700</strong> para la meta.</span>
+        </div>
+      </a>
+
+      <!-- COMERCIAL 2 · Diego -->
+      <a class="comercial" href="#" aria-label="Ver pipeline de Diego">
+        <div class="comercial-head">
+          <div class="comercial-avatar av-dt">DT</div>
+          <div class="comercial-info">
+            <div class="comercial-name">Diego Tovar</div>
+            <div class="comercial-role">Comercial · 22 leads</div>
+          </div>
+          <svg class="open-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+        </div>
+
+        <div class="meta-block">
+          <div class="meta-header">
+            <span class="meta-label">Meta del mes</span>
+            <span class="meta-value">USD 15.000 / <strong>25.000</strong></span>
+          </div>
+          <div class="meta-bar">
+            <div class="meta-fill behind" style="width: 60%"></div>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-top: 6px;">
+            <span class="meta-percent behind">60%</span>
+            <span class="meta-percent" style="color: var(--muted); font-weight: 500;">faltan 6 días</span>
+          </div>
+        </div>
+
+        <div class="metrics-grid">
+          <div class="metric">
+            <span class="metric-label">Activos</span>
+            <span class="metric-value">22</span>
+            <span class="metric-sub"><strong>USD 84.700</strong></span>
+          </div>
+          <div class="metric">
+            <span class="metric-label">Ganados mes</span>
+            <span class="metric-value">1</span>
+            <span class="metric-sub"><strong>USD 15.000</strong></span>
+          </div>
+          <div class="metric">
+            <span class="metric-label">Ratio cierre</span>
+            <span class="metric-value">9%</span>
+            <span class="metric-sub">últimos 90 días</span>
+          </div>
+          <div class="metric">
+            <span class="metric-label">Leads frío</span>
+            <span class="metric-value alert">5</span>
+            <span class="metric-sub">requieren atención</span>
+          </div>
+        </div>
+
+        <div class="insight-pill danger">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01"/><circle cx="12" cy="12" r="10"/></svg>
+          <span><strong>5 leads frío</strong> sin contacto +5 días. Sobrecargado.</span>
+          <span class="action">Reasignar →</span>
+        </div>
+      </a>
+
+      <!-- COMERCIAL 3 · Sofía -->
+      <a class="comercial" href="#" aria-label="Ver pipeline de Sofía">
+        <div class="comercial-head">
+          <div class="comercial-avatar av-sm">SM</div>
+          <div class="comercial-info">
+            <div class="comercial-name">Sofía Martínez</div>
+            <div class="comercial-role">Comercial · 10 leads</div>
+          </div>
+          <svg class="open-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+        </div>
+
+        <div class="meta-block">
+          <div class="meta-header">
+            <span class="meta-label">Meta del mes</span>
+            <span class="meta-value">USD 17.700 / <strong>15.000</strong></span>
+          </div>
+          <div class="meta-bar">
+            <div class="meta-fill ahead" style="width: 100%"></div>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-top: 6px;">
+            <span class="meta-percent ahead">118%</span>
+            <span class="meta-percent" style="color: var(--muted); font-weight: 500;">meta superada</span>
+          </div>
+        </div>
+
+        <div class="metrics-grid">
+          <div class="metric">
+            <span class="metric-label">Activos</span>
+            <span class="metric-value">10</span>
+            <span class="metric-sub"><strong>USD 38.500</strong></span>
+          </div>
+          <div class="metric">
+            <span class="metric-label">Ganados mes</span>
+            <span class="metric-value">1</span>
+            <span class="metric-sub"><strong>USD 17.700</strong></span>
+          </div>
+          <div class="metric">
+            <span class="metric-label">Ratio cierre</span>
+            <span class="metric-value">21%</span>
+            <span class="metric-sub">últimos 90 días</span>
+          </div>
+          <div class="metric">
+            <span class="metric-label">Leads frío</span>
+            <span class="metric-value">0</span>
+            <span class="metric-sub">al día</span>
+          </div>
+        </div>
+
+        <div class="insight-pill good">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m5 12 5 5 9-11"/></svg>
+          <span>El mejor ratio del mes. <strong>Meta superada.</strong></span>
+        </div>
+      </a>
+
+    </div>
+
+  </main>
+
+</div>
+
+<script>
+  const sidebar = document.querySelector('.sidebar');
+  const backdrop = document.getElementById('backdrop');
+  document.getElementById('open-sidebar')?.addEventListener('click', () => {
+    sidebar.classList.add('open');
+    backdrop.classList.add('active');
+  });
+  backdrop?.addEventListener('click', () => {
+    sidebar.classList.remove('open');
+    backdrop.classList.remove('active');
+  });
+</script>
+
+</body>
+</html>

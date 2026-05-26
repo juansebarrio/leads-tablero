@@ -50,18 +50,21 @@ const COMERCIALES = [
     iniciales: "ML",
     email: "mariana@js80.studio",
     avatar_gradient: "linear-gradient(135deg, #8B6FFF, #5DC7E0)",
+    meta_mensual: 20000,
   },
   {
     nombre: "Diego Tovar",
     iniciales: "DT",
     email: "diego@js80.studio",
     avatar_gradient: "linear-gradient(135deg, #FF8AA0, #FFB088)",
+    meta_mensual: 25000,
   },
   {
     nombre: "Sofía Méndez",
     iniciales: "SM",
     email: "sofia@js80.studio",
     avatar_gradient: "linear-gradient(135deg, #6B8CFF, #8B6FFF)",
+    meta_mensual: 15000,
   },
 ] as const;
 

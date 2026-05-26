@@ -11,7 +11,18 @@ import {
   getPrimerPatronIa,
 } from "@/lib/queries";
 
-export default async function PipelinePage() {
+interface SearchParams {
+  comercial?: string;
+}
+
+export default async function PipelinePage({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>;
+}) {
+  const params = await searchParams;
+  const initialComercialId = params.comercial ?? null;
+
   let datos;
   try {
     const [
@@ -84,7 +95,11 @@ export default async function PipelinePage() {
       // horizontal en tablet/mobile).
       mainClassName="pt-5 md:pt-7 pb-16 min-w-0 lg:px-8 lg:py-7"
     >
-      <PipelineBoard initialLeads={leadsKanban} comerciales={comerciales} />
+      <PipelineBoard
+        initialLeads={leadsKanban}
+        comerciales={comerciales}
+        initialComercialId={initialComercialId}
+      />
     </DashboardLayout>
   );
 }

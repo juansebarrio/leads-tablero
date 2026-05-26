@@ -4,7 +4,9 @@
 import { createClient } from "@/lib/supabase/server";
 import type {
   Comercial,
+  ComercialConMetricas,
   Contacto,
+  EquipoMetricas,
   EventoAgenda,
   Lead,
   LeadDetalle,
@@ -122,6 +124,42 @@ export async function getComerciales(): Promise<Comercial[]> {
     .order("nombre", { ascending: true });
   if (error) throw error;
   return (data ?? []) as Comercial[];
+}
+
+// Comerciales con métricas agregadas para la pantalla /equipo.
+export async function getComercialesConMetricas(): Promise<
+  ComercialConMetricas[]
+> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("v_comerciales_metricas")
+    .select("*")
+    .order("nombre", { ascending: true });
+  if (error) throw error;
+  return (data ?? []) as ComercialConMetricas[];
+}
+
+// Sumas del equipo. Las calculamos en JS reusando getComercialesConMetricas
+// para evitar otra view dedicada (y mantener consistencia con los detalles).
+export async function getEquipoMetricas(): Promise<EquipoMetricas> {
+  const comerciales = await getComercialesConMetricas();
+  const sum = (k: keyof ComercialConMetricas) =>
+    comerciales.reduce((acc, c) => acc + (c[k] as number), 0);
+
+  // Ratio de cierre global: promedio simple. No es lo mismo que recalcularlo
+  // a nivel agregado, pero alcanza para la card global del equipo.
+  const ratioCierre =
+    comerciales.length === 0
+      ? 0
+      : sum("ratio_cierre") / comerciales.length;
+
+  return {
+    leads_activos: sum("leads_activos"),
+    pipeline_valor: sum("pipeline_valor"),
+    ganados_mes_cantidad: sum("ganados_mes_cantidad"),
+    ganados_mes_valor: sum("ganados_mes_valor"),
+    ratio_cierre: ratioCierre,
+  };
 }
 
 // El primer patrón detectado (la vista devuelve 0 o 1 fila gracias al HAVING).

@@ -31,6 +31,26 @@ export type Comercial = {
   avatar_gradient: string;
   email: string;
   creado_en: string;
+  meta_mensual: number;
+};
+
+// Devuelto por v_comerciales_metricas.
+export type ComercialConMetricas = Comercial & {
+  leads_activos: number;
+  pipeline_valor: number;
+  ganados_mes_cantidad: number;
+  ganados_mes_valor: number;
+  ratio_cierre: number; // 0-100
+  leads_frios: number;
+};
+
+// Sumas globales del equipo (calculadas en JS desde los comerciales).
+export type EquipoMetricas = {
+  leads_activos: number;
+  pipeline_valor: number;
+  ganados_mes_cantidad: number;
+  ganados_mes_valor: number;
+  ratio_cierre: number;
 };
 
 export type Lead = {
