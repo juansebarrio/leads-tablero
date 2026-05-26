@@ -37,17 +37,12 @@ export function NuevoLeadTrigger({
 }
 
 // Drawer global. Una sola instancia en DashboardLayout. Lee del context.
+// El Form se mantiene montado siempre (necesario para que el transform
+// del Drawer pueda animar slide-in/out). El estado interno se resetea
+// dentro del Form cuando `open` cambia de false a true.
 export function NuevoLeadDrawer() {
   const { isOpen, closeAll } = useDrawers();
-  const open = isOpen("nuevo-lead");
-
-  // Cambia cada vez que se abre para re-montar el form con estado fresco.
-  const [mountKey, setMountKey] = useState(0);
-  useEffect(() => {
-    if (open) setMountKey((k) => k + 1);
-  }, [open]);
-
-  return <Form key={mountKey} open={open} onClose={closeAll} />;
+  return <Form open={isOpen("nuevo-lead")} onClose={closeAll} />;
 }
 
 function Form({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -56,6 +51,15 @@ function Form({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [origen, setOrigen] = useState<Origen>("formulario");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+
+  // Reset cada vez que se reabre el drawer.
+  useEffect(() => {
+    if (open) {
+      setNombre("");
+      setOrigen("formulario");
+      setError(null);
+    }
+  }, [open]);
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();

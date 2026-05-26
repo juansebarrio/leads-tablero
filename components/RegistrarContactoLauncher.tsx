@@ -75,24 +75,14 @@ export function RegistrarContactoTrigger({
 }
 
 // Drawer global. Una sola instancia en DashboardLayout. Lee del context
-// los datos del lead (leadId, leadNombre).
+// los datos del lead. El Form se mantiene montado para que la animación
+// slide-in/out del Drawer funcione (sino al re-montar arranca ya en
+// posición final).
 export function RegistrarContactoDrawer() {
   const { isOpen, registrarContactoData, closeAll } = useDrawers();
-  const open = isOpen("registrar-contacto");
-
-  // Re-monta el form cuando abre, para arrancar con estado fresco.
-  const [mountKey, setMountKey] = useState(0);
-  useEffect(() => {
-    if (open) setMountKey((k) => k + 1);
-  }, [open]);
-
-  // Si nunca abrió, no rendereamos nada (evita drawer huérfano).
-  if (!registrarContactoData && !open) return null;
-
   return (
     <Form
-      key={mountKey}
-      open={open}
+      open={isOpen("registrar-contacto")}
       onClose={closeAll}
       leadId={registrarContactoData?.leadId ?? ""}
       leadNombre={registrarContactoData?.leadNombre ?? ""}
@@ -121,6 +111,20 @@ function Form({
   const [proximoHora, setProximoHora] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+
+  // Reset cada vez que se reabre. Fecha/hora se recalculan al "ahora".
+  useEffect(() => {
+    if (open) {
+      setCanal("llamado");
+      setFecha(todayDateInput());
+      setHora(nowTimeInput());
+      setNota("");
+      setProximoPaso("");
+      setProximoFecha("");
+      setProximoHora("");
+      setError(null);
+    }
+  }, [open]);
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
