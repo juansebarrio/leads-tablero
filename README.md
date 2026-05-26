@@ -74,3 +74,4 @@ pnpm dev                     # arranca Next en localhost:3000
 ---
 
 JS80 · *De la idea al negocio funcionando.*
+# leads-tablero
