@@ -7,12 +7,9 @@ interface AgendaTriggerProps {
   count: number;
 }
 
-// Botón flotante "Tu día" — esquina sup-der.
-// Visible solo en el breakpoint Desktop (lg, 1024–1279): donde la sidebar
-// ya entra pero la agenda lateral todavía es drawer.
-// En sub-lg (mobile/tablet) usamos el ícono del TopbarMobile (también en
-// esquina sup-der). En xl el panel agenda es visible siempre, no hace falta
-// botón.
+// Botón "Tu día" inline en el hero. En desktop (≥md) se renderiza al lado
+// de Exportar y Nuevo lead. En sub-md no se muestra: el ícono del
+// TopbarMobile (también esquina sup-der) cumple el rol.
 export function AgendaTrigger({ count }: AgendaTriggerProps) {
   const { openAgenda } = useDrawers();
   return (
@@ -21,12 +18,10 @@ export function AgendaTrigger({ count }: AgendaTriggerProps) {
       onClick={openAgenda}
       aria-label="Abrir agenda"
       className="
-        hidden lg:inline-flex xl:hidden items-center gap-1.5
-        fixed top-4 right-4 z-[60]
+        hidden md:inline-flex items-center gap-1.5
         border border-line bg-panel text-ink-2 px-3.5 py-2 rounded-md
         font-medium text-[12.5px] cursor-pointer whitespace-nowrap
-        shadow-[0_2px_8px_rgba(14,14,18,0.06)]
-        hover:border-ink-2 hover:shadow-[0_4px_12px_rgba(14,14,18,0.08)] transition
+        hover:border-ink-2 transition
       "
     >
       <Calendar className="w-3.5 h-3.5" strokeWidth={2} />

@@ -9,15 +9,15 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { registrarContacto } from "@/app/actions/contactos";
 import { Drawer } from "@/components/Drawer";
+import { useDrawers } from "@/components/drawer-context";
 import type { CanalContacto } from "@/lib/types";
 
-interface RegistrarContactoLauncherProps {
+interface RegistrarContactoTriggerProps {
   leadId: string;
   leadNombre: string;
-  // Opcional: override del className del botón.
   className?: string;
 }
 
@@ -46,26 +46,18 @@ function nowTimeInput(): string {
   return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-export function RegistrarContactoLauncher({
+// Trigger: solo el botón. Pasa los datos del lead al context cuando se abre.
+export function RegistrarContactoTrigger({
   leadId,
   leadNombre,
   className = DEFAULT_BTN,
-}: RegistrarContactoLauncherProps) {
-  const [open, setOpen] = useState(false);
-  // Cambia cada vez que se abre para re-montar el form (estado fresco).
-  const [mountKey, setMountKey] = useState(0);
-
-  const onOpen = () => {
-    setMountKey((k) => k + 1);
-    setOpen(true);
-  };
-  const onClose = () => setOpen(false);
-
+}: RegistrarContactoTriggerProps) {
+  const { openRegistrarContacto } = useDrawers();
   return (
     <>
       <button
         type="button"
-        onClick={onOpen}
+        onClick={() => openRegistrarContacto({ leadId, leadNombre })}
         className={className}
         aria-label="Registrar contacto"
       >
@@ -78,14 +70,33 @@ export function RegistrarContactoLauncher({
         <span className="hidden sm:inline xs:hidden">Registrar contacto</span>
         <span className="inline xs:hidden sm:hidden">Contacto</span>
       </button>
-      <Form
-        key={mountKey}
-        open={open}
-        onClose={onClose}
-        leadId={leadId}
-        leadNombre={leadNombre}
-      />
     </>
+  );
+}
+
+// Drawer global. Una sola instancia en DashboardLayout. Lee del context
+// los datos del lead (leadId, leadNombre).
+export function RegistrarContactoDrawer() {
+  const { isOpen, registrarContactoData, closeAll } = useDrawers();
+  const open = isOpen("registrar-contacto");
+
+  // Re-monta el form cuando abre, para arrancar con estado fresco.
+  const [mountKey, setMountKey] = useState(0);
+  useEffect(() => {
+    if (open) setMountKey((k) => k + 1);
+  }, [open]);
+
+  // Si nunca abrió, no rendereamos nada (evita drawer huérfano).
+  if (!registrarContactoData && !open) return null;
+
+  return (
+    <Form
+      key={mountKey}
+      open={open}
+      onClose={closeAll}
+      leadId={registrarContactoData?.leadId ?? ""}
+      leadNombre={registrarContactoData?.leadNombre ?? ""}
+    />
   );
 }
 

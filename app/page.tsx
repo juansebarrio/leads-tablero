@@ -1,9 +1,10 @@
 import { AIInsight } from "@/components/AIInsight";
+import { AgendaTrigger } from "@/components/AgendaTrigger";
 import { DashboardHero } from "@/components/DashboardHero";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { ErrorView, PasosConfigSupabase } from "@/components/ErrorView";
 import { LeadsTable } from "@/components/LeadsTable";
-import { NuevoLeadLauncher } from "@/components/NuevoLeadLauncher";
+import { NuevoLeadTrigger } from "@/components/NuevoLeadLauncher";
 import { OpportunityCard } from "@/components/OpportunityCard";
 import { PipelineBar } from "@/components/PipelineBar";
 import { getCurrentUser } from "@/lib/auth";
@@ -80,7 +81,8 @@ export default async function Page() {
         nombreComercial={currentUser.nombre.split(" ")[0]}
         cantidadFrios={cantidadFrios}
         cantidadReuniones={cantidadAgenda}
-        nuevoLeadTrigger={<NuevoLeadLauncher />}
+        agendaTrigger={<AgendaTrigger count={cantidadAgenda} />}
+        nuevoLeadTrigger={<NuevoLeadTrigger />}
       />
 
       <PipelineBar data={pipeline} />

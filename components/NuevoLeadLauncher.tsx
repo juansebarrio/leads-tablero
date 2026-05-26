@@ -2,13 +2,13 @@
 
 import { Info, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { crearLead } from "@/app/actions/leads";
 import { Drawer } from "@/components/Drawer";
+import { useDrawers } from "@/components/drawer-context";
 import type { Origen } from "@/lib/types";
 
-interface NuevoLeadLauncherProps {
-  // Opcional: override del className del botón para que matchee el contexto.
+interface NuevoLeadTriggerProps {
   className?: string;
 }
 
@@ -22,27 +22,32 @@ const ORIGENES: { value: Origen; label: string }[] = [
 const DEFAULT_BTN =
   "flex-1 md:flex-none border border-ink bg-ink text-white px-3.5 py-2 rounded-md font-medium text-[12.5px] hover:bg-violeta hover:border-violeta inline-flex items-center justify-center gap-1.5 transition cursor-pointer whitespace-nowrap";
 
-export function NuevoLeadLauncher({
+// Trigger: solo el botón. Se monta donde necesite el caller (ej: hero).
+// El drawer se monta una sola vez en el DashboardLayout (NuevoLeadDrawer).
+export function NuevoLeadTrigger({
   className = DEFAULT_BTN,
-}: NuevoLeadLauncherProps) {
-  const [open, setOpen] = useState(false);
-  const [mountKey, setMountKey] = useState(0);
-
-  const onOpen = () => {
-    setMountKey((k) => k + 1);
-    setOpen(true);
-  };
-  const onClose = () => setOpen(false);
-
+}: NuevoLeadTriggerProps) {
+  const { openNuevoLead } = useDrawers();
   return (
-    <>
-      <button type="button" onClick={onOpen} className={className}>
-        <Plus className="w-3.5 h-3.5" strokeWidth={2.4} />
-        Nuevo lead
-      </button>
-      <Form key={mountKey} open={open} onClose={onClose} />
-    </>
+    <button type="button" onClick={openNuevoLead} className={className}>
+      <Plus className="w-3.5 h-3.5" strokeWidth={2.4} />
+      Nuevo lead
+    </button>
   );
+}
+
+// Drawer global. Una sola instancia en DashboardLayout. Lee del context.
+export function NuevoLeadDrawer() {
+  const { isOpen, closeAll } = useDrawers();
+  const open = isOpen("nuevo-lead");
+
+  // Cambia cada vez que se abre para re-montar el form con estado fresco.
+  const [mountKey, setMountKey] = useState(0);
+  useEffect(() => {
+    if (open) setMountKey((k) => k + 1);
+  }, [open]);
+
+  return <Form key={mountKey} open={open} onClose={closeAll} />;
 }
 
 function Form({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -63,7 +68,6 @@ function Form({ open, onClose }: { open: boolean; onClose: () => void }) {
         return;
       }
       onClose();
-      // Llevamos al comercial a la ficha del lead recién creado.
       router.push(`/lead/${res.data.id}`);
       router.refresh();
     });
@@ -117,7 +121,6 @@ function Form({ open, onClose }: { open: boolean; onClose: () => void }) {
           </div>
         )}
 
-        {/* Nombre */}
         <div className="flex flex-col gap-1.5">
           <div className="flex items-baseline justify-between gap-2.5">
             <span className="text-[11.5px] font-semibold text-ink-2">
@@ -138,7 +141,6 @@ function Form({ open, onClose }: { open: boolean; onClose: () => void }) {
           />
         </div>
 
-        {/* Origen */}
         <div className="flex flex-col gap-1.5">
           <span className="text-[11.5px] font-semibold text-ink-2">
             ¿Por dónde llegó?
@@ -163,7 +165,6 @@ function Form({ open, onClose }: { open: boolean; onClose: () => void }) {
           </div>
         </div>
 
-        {/* Info */}
         <div className="bg-panel-2 border border-line rounded-lg p-4 flex gap-3 items-start mt-1">
           <div className="w-6 h-6 rounded-full bg-violeta-soft text-violeta flex items-center justify-center shrink-0">
             <Info className="w-3 h-3" strokeWidth={2.2} />

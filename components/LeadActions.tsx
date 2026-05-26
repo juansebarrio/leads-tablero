@@ -2,8 +2,7 @@
 
 import { CheckCircle2, MoreVertical, PencilLine } from "lucide-react";
 import { toast } from "sonner";
-import { AgendaTrigger } from "@/components/AgendaTrigger";
-import { RegistrarContactoLauncher } from "@/components/RegistrarContactoLauncher";
+import { RegistrarContactoTrigger } from "@/components/RegistrarContactoLauncher";
 import { estadoSiguiente } from "@/lib/lead-utils";
 import type { Estado } from "@/lib/types";
 
@@ -11,14 +10,12 @@ interface LeadActionsProps {
   leadId: string;
   leadNombre: string;
   estadoActual: Estado;
-  agendaCount: number;
 }
 
 export function LeadActions({
   leadId,
   leadNombre,
   estadoActual,
-  agendaCount,
 }: LeadActionsProps) {
   const siguiente = estadoSiguiente(estadoActual);
 
@@ -39,11 +36,8 @@ export function LeadActions({
 
   return (
     <div className="flex items-center gap-2 shrink-0">
-      {/* "Tu día" — solo visible Desktop (1024–1279) */}
-      <AgendaTrigger count={agendaCount} />
-
       {/* Primary: Registrar contacto — abre el drawer */}
-      <RegistrarContactoLauncher leadId={leadId} leadNombre={leadNombre} />
+      <RegistrarContactoTrigger leadId={leadId} leadNombre={leadNombre} />
 
       {/* Mover + Editar — ocultos en mobile */}
       {siguiente && (

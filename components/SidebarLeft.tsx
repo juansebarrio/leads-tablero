@@ -45,7 +45,8 @@ type NavItem = {
 };
 
 export function SidebarLeft({ counts = {}, currentUser }: SidebarLeftProps) {
-  const { sidebarOpen, closeAll } = useDrawers();
+  const { isOpen, closeAll } = useDrawers();
+  const sidebarOpen = isOpen("sidebar");
   const pathname = usePathname();
 
   // El acceso a "Agenda" vive en el botón flotante de la esquina sup-der

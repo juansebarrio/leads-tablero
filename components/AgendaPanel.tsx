@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Drawer } from "@/components/Drawer";
 import { useDrawers } from "@/components/drawer-context";
 import { formatDuracion, formatHora } from "@/lib/format";
 import { formatFechaCorta } from "@/lib/lead-utils";
@@ -8,7 +9,6 @@ import type { AgendaTag, EventoAgenda } from "@/lib/types";
 
 interface AgendaPanelProps {
   events: EventoAgenda[];
-  // Stats opcionales que se muestran al pie. Por ahora hardcodeadas en parent.
   cierreMes?: {
     valor: number;
     porcentaje: number;
@@ -32,12 +32,11 @@ const TAG_LABEL: Record<AgendaTag, string> = {
 };
 
 export function AgendaPanel({ events, cierreMes }: AgendaPanelProps) {
-  const { agendaOpen } = useDrawers();
-  const ahora = useNow(); // null hasta primer effect → evita hydration mismatch
+  const { isOpen, closeAll } = useDrawers();
+  const open = isOpen("agenda");
+  const ahora = useNow();
 
-  // El evento "now" es el primero que aún no terminó hoy. Si todavía no
-  // tenemos la hora real (server render o pre-hidratación), no marcamos
-  // ninguno.
+  // Evento "now" = primero que aún no terminó hoy.
   const idxAhora = ahora
     ? events.findIndex(
         (e) =>
@@ -49,33 +48,20 @@ export function AgendaPanel({ events, cierreMes }: AgendaPanelProps) {
   const fechaHumano = ahora ? formatFechaCorta(ahora.toISOString()) : "";
 
   return (
-    <aside
-      className={`
-        bg-panel border-l border-line p-[22px] pt-7 overflow-y-auto
-
-        /* xl (≥1280px): grid item normal del DashboardLayout, sticky a top */
-        xl:sticky xl:top-0 xl:h-screen xl:w-full xl:translate-x-0 xl:shadow-none xl:z-auto
-
-        /* sub-xl: drawer fixed a la derecha, oculto si !agendaOpen */
-        max-xl:fixed max-xl:top-0 max-xl:right-0 max-xl:w-[320px] max-xl:max-w-[90vw]
-        max-xl:h-screen max-xl:z-[70] max-xl:transition-transform max-xl:duration-250 max-xl:ease-in-out
-        max-xl:shadow-[-8px_0_32px_rgba(14,14,18,0.08)]
-        ${agendaOpen ? "max-xl:translate-x-0" : "max-xl:translate-x-full"}
-        max-md:w-full max-md:max-w-[360px]
-      `}
+    <Drawer
+      open={open}
+      onClose={closeAll}
+      title="Tu día"
+      subtitle={
+        <>
+          {events.length} {events.length === 1 ? "reunión" : "reuniones"}
+          {fechaHumano && <> · {fechaHumano}</>}
+        </>
+      }
+      widthPx={420}
     >
-      <div
-        className="font-display font-medium text-lg -tracking-[0.015em] mb-1"
-        style={{ fontVariationSettings: '"opsz" 144' }}
-      >
-        Tu día
-      </div>
-      <div className="text-[11.5px] text-muted mb-4">
-        {events.length} {events.length === 1 ? "reunión" : "reuniones"}
-        {fechaHumano && <> · {fechaHumano}</>}
-      </div>
       {ahora && (
-        <div className="bg-ink text-white text-[10px] px-2 py-0.5 rounded-full tracking-[0.06em] uppercase font-semibold inline-block mb-3">
+        <div className="bg-ink text-white text-[10px] px-2 py-0.5 rounded-full tracking-[0.06em] uppercase font-semibold inline-block self-start">
           ● Ahora · {formatHora(ahora.toISOString())}
         </div>
       )}
@@ -92,11 +78,14 @@ export function AgendaPanel({ events, cierreMes }: AgendaPanelProps) {
       </div>
 
       {cierreMes && (
-        <div className="mt-5 p-4 bg-bg rounded-lg border border-line">
+        <div className="mt-2 p-4 bg-bg rounded-lg border border-line">
           <div className="text-[10.5px] text-muted tracking-[0.06em] uppercase font-semibold mb-1.5">
             Cierre del mes
           </div>
-          <div className="font-display font-semibold text-[22px] -tracking-[0.02em] leading-none text-ink mb-1.5">
+          <div
+            className="font-display font-semibold text-[22px] -tracking-[0.02em] leading-none text-ink mb-1.5"
+            style={{ fontVariationSettings: '"opsz" 144' }}
+          >
             USD {(cierreMes.valor / 1000).toFixed(0)}k{" "}
             <em className="italic text-violeta">· {cierreMes.porcentaje}%</em>
           </div>
@@ -109,7 +98,7 @@ export function AgendaPanel({ events, cierreMes }: AgendaPanelProps) {
           </div>
         </div>
       )}
-    </aside>
+    </Drawer>
   );
 }
 
@@ -169,10 +158,8 @@ function labelModalidad(m: EventoAgenda["modalidad"]): string {
   }
 }
 
-// Hook minimalista: actualiza la hora cada minuto para que "Ahora" no quede
-// congelado. Arranca con `null` para evitar hydration mismatch (el server no
-// sabe la hora del client). Después del primer effect cliente, queda con
-// Date real.
+// Inicializa null para evitar hydration mismatch (server no sabe la hora
+// del cliente). Después del primer effect cliente, queda con Date real.
 function useNow(): Date | null {
   const [now, setNow] = useState<Date | null>(null);
   useEffect(() => {

@@ -1,49 +1,80 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
+
+// Un solo drawer puede estar activo a la vez. Si abrís uno, el anterior
+// se cierra automáticamente. Esto evita que se vean dos overlays superpuestos
+// (ej: Agenda detrás del form de Nuevo lead).
+export type DrawerKind =
+  | "sidebar"
+  | "agenda"
+  | "nuevo-lead"
+  | "registrar-contacto";
+
+type RegistrarContactoData = { leadId: string; leadNombre: string };
 
 type DrawerState = {
-  sidebarOpen: boolean;
-  agendaOpen: boolean;
+  active: DrawerKind | null;
+  registrarContactoData: RegistrarContactoData | null;
+
   openSidebar: () => void;
   openAgenda: () => void;
+  openNuevoLead: () => void;
+  openRegistrarContacto: (data: RegistrarContactoData) => void;
   closeAll: () => void;
+
+  // Helper: ¿está abierto este drawer?
+  isOpen: (kind: DrawerKind) => boolean;
 };
 
 const DrawerContext = createContext<DrawerState | null>(null);
 
 export function DrawerProvider({ children }: { children: React.ReactNode }) {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [agendaOpen, setAgendaOpen] = useState(false);
+  const [active, setActive] = useState<DrawerKind | null>(null);
+  const [registrarContactoData, setRegistrarContactoData] =
+    useState<RegistrarContactoData | null>(null);
 
-  const closeAll = () => {
-    setSidebarOpen(false);
-    setAgendaOpen(false);
-  };
-  const openSidebar = () => {
-    setAgendaOpen(false);
-    setSidebarOpen(true);
-  };
-  const openAgenda = () => {
-    setSidebarOpen(false);
-    setAgendaOpen(true);
-  };
+  const value = useMemo<DrawerState>(
+    () => ({
+      active,
+      registrarContactoData,
+      openSidebar: () => {
+        setRegistrarContactoData(null);
+        setActive("sidebar");
+      },
+      openAgenda: () => {
+        setRegistrarContactoData(null);
+        setActive("agenda");
+      },
+      openNuevoLead: () => {
+        setRegistrarContactoData(null);
+        setActive("nuevo-lead");
+      },
+      openRegistrarContacto: (data) => {
+        setRegistrarContactoData(data);
+        setActive("registrar-contacto");
+      },
+      closeAll: () => {
+        setActive(null);
+        // Mantener registrarContactoData para que el componente termine de
+        // animar la salida sin perder el lead. Se limpia al abrir otro.
+      },
+      isOpen: (kind) => active === kind,
+    }),
+    [active, registrarContactoData],
+  );
 
-  // Escape cierra cualquier drawer abierto.
+  // Escape cierra el drawer activo.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") closeAll();
+      if (e.key === "Escape") setActive(null);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
   return (
-    <DrawerContext.Provider
-      value={{ sidebarOpen, agendaOpen, openSidebar, openAgenda, closeAll }}
-    >
-      {children}
-    </DrawerContext.Provider>
+    <DrawerContext.Provider value={value}>{children}</DrawerContext.Provider>
   );
 }
 
