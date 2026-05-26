@@ -18,6 +18,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Nucleus } from "@/components/Nucleus";
 import { useDrawers } from "@/components/drawer-context";
+import type { CurrentUser } from "@/lib/auth";
 
 export type SidebarCounts = {
   atenderHoy?: number;
@@ -32,6 +33,7 @@ export type SidebarCounts = {
 
 interface SidebarLeftProps {
   counts?: SidebarCounts;
+  currentUser: CurrentUser;
 }
 
 type NavItem = {
@@ -42,7 +44,7 @@ type NavItem = {
   href?: string;
 };
 
-export function SidebarLeft({ counts = {} }: SidebarLeftProps) {
+export function SidebarLeft({ counts = {}, currentUser }: SidebarLeftProps) {
   const { sidebarOpen, closeAll } = useDrawers();
   const pathname = usePathname();
 
@@ -140,19 +142,19 @@ export function SidebarLeft({ counts = {} }: SidebarLeftProps) {
         onItemClick={closeAll}
       />
 
-      {/* Foot: user (demo: hardcodeado) */}
+      {/* Foot: usuario actual (via getCurrentUser) */}
       <div className="mt-auto pt-3.5 border-t border-line flex items-center gap-2.5">
         <div
           className="w-7 h-7 rounded-full flex items-center justify-center text-white font-semibold text-[11px]"
-          style={{
-            background: "linear-gradient(135deg, #8B6FFF, #5DC7E0)",
-          }}
+          style={{ background: currentUser.avatar_gradient }}
         >
-          ML
+          {currentUser.iniciales}
         </div>
         <div className="text-[12px] leading-tight">
-          <div className="font-semibold text-ink">Mariana López</div>
-          <div className="text-muted text-[10.5px]">Comercial</div>
+          <div className="font-semibold text-ink">{currentUser.nombre}</div>
+          <div className="text-muted text-[10.5px] capitalize">
+            {currentUser.rol}
+          </div>
         </div>
       </div>
     </aside>
@@ -176,60 +178,84 @@ function NavSection({
         {title}
       </div>
       {items.map((item) => {
-        const Icon = item.icon;
-        const isActive = item.href !== undefined && pathname === item.href;
-        const content = (
-          <>
-            <Icon
-              className={`w-3.5 h-3.5 shrink-0 ${isActive ? "text-white" : "text-muted"}`}
-              strokeWidth={2}
-            />
-            <span className="text-left flex-1">{item.label}</span>
-            {item.count !== undefined && (
-              <span
-                className={`
-                  text-[10.5px] px-1.5 py-px rounded-full font-medium
-                  ${
-                    isActive
-                      ? "bg-white/15 text-white"
-                      : item.alert
-                        ? "bg-rojo-soft text-rojo"
-                        : "bg-line-2 text-muted"
-                  }
-                `}
-              >
-                {item.count === null ? "—" : item.count}
-              </span>
-            )}
-          </>
-        );
-        const className = `
-          w-full flex items-center gap-2.5 px-2 py-1.5 my-px rounded-md text-[12.5px] cursor-pointer transition
-          ${isActive ? "bg-ink text-white" : "text-ink-2 hover:bg-line-2"}
-        `;
+        // Items navegables → estilo principal (link con icono, bg negro
+        // si activo). Items sin href → "info row" subordinada (sin icono,
+        // texto más chico y muteado, no clickable).
         if (item.href) {
           return (
-            <Link
+            <PrimaryItem
               key={item.label}
-              href={item.href}
+              item={item}
+              pathname={pathname}
               onClick={onItemClick}
-              className={className}
-            >
-              {content}
-            </Link>
+            />
           );
         }
-        return (
-          <button
-            type="button"
-            key={item.label}
-            onClick={onItemClick}
-            className={className}
-          >
-            {content}
-          </button>
-        );
+        return <InfoRow key={item.label} item={item} />;
       })}
+    </div>
+  );
+}
+
+function PrimaryItem({
+  item,
+  pathname,
+  onClick,
+}: {
+  item: NavItem;
+  pathname: string;
+  onClick: () => void;
+}) {
+  const Icon = item.icon;
+  const isActive = item.href !== undefined && pathname === item.href;
+  return (
+    <Link
+      href={item.href!}
+      onClick={onClick}
+      className={`
+        w-full flex items-center gap-2.5 px-2 py-1.5 my-px rounded-md text-[12.5px] cursor-pointer transition
+        ${isActive ? "bg-ink text-white font-medium" : "text-ink-2 hover:bg-line-2"}
+      `}
+    >
+      <Icon
+        className={`w-3.5 h-3.5 shrink-0 ${isActive ? "text-white" : "text-muted"}`}
+        strokeWidth={2}
+      />
+      <span className="text-left flex-1">{item.label}</span>
+      {item.count !== undefined && (
+        <span
+          className={`
+            text-[10.5px] px-1.5 py-px rounded-full font-medium
+            ${
+              isActive
+                ? "bg-white/15 text-white"
+                : item.alert
+                  ? "bg-rojo-soft text-rojo"
+                  : "bg-line-2 text-muted"
+            }
+          `}
+        >
+          {item.count === null ? "—" : item.count}
+        </span>
+      )}
+    </Link>
+  );
+}
+
+// Item subordinado: no es navegable, solo informativo (filtro o métrica).
+// Sin icono, texto chico, padding lateral igual al icono del PrimaryItem
+// para que quede alineado visualmente.
+function InfoRow({ item }: { item: NavItem }) {
+  return (
+    <div className="flex items-center gap-2.5 pl-[26px] pr-2 py-1 my-px text-[11.5px] text-muted-2">
+      <span className="text-left flex-1">{item.label}</span>
+      {item.count !== undefined && (
+        <span
+          className={`text-[10.5px] font-medium ${item.alert ? "text-rojo" : "text-muted-2"}`}
+        >
+          {item.count === null ? "—" : item.count}
+        </span>
+      )}
     </div>
   );
 }

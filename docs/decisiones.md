@@ -121,6 +121,21 @@
 
 ---
 
+## 2026-05-26 · Centralización de queries y abstracción de usuario
+
+**Decisión:** Todas las queries de Supabase pasan por `lib/queries.ts`. El usuario actual se obtiene siempre vía `getCurrentUser()` en `lib/auth.ts`.
+
+**Razón:** Cuando migremos a producción real (multi-tenant con Auth), el cambio se va a hacer en 2-3 archivos puntuales y no en toda la app.
+
+**Implicancias:**
+- Server Components nunca llaman `supabase.from(...)` directo para leer. Usan funciones de `lib/queries.ts`.
+- Server Actions sí pueden mutar (`insert`/`update`/`delete`) directamente — son la frontera de escritura.
+- Nadie hardcodea "Mariana" ni datos de comercial. Usan `getCurrentUser()`.
+- `getCurrentOrgId()` existe como placeholder para multi-tenancy futuro; hoy devuelve `'demo-org'`.
+- El día que sumemos Auth: cambia `lib/auth.ts` para leer la sesión real, y se suman filtros por `organizacion_id` en `lib/queries.ts`. Punto.
+
+---
+
 ## Cuando agregues una decisión nueva
 
 Plantilla:

@@ -1,6 +1,7 @@
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { ErrorView, PasosConfigSupabase } from "@/components/ErrorView";
 import { PipelineBoard } from "@/components/pipeline/PipelineBoard";
+import { getCurrentUser } from "@/lib/auth";
 import {
   getAgendaDia,
   getComerciales,
@@ -14,6 +15,7 @@ export default async function PipelinePage() {
   let datos;
   try {
     const [
+      currentUser,
       leadsKanban,
       comerciales,
       pipeline,
@@ -21,6 +23,7 @@ export default async function PipelinePage() {
       agendaEvents,
       patron,
     ] = await Promise.all([
+      getCurrentUser(),
       getLeadsParaKanban(),
       getComerciales(),
       getPipelineResumen(),
@@ -28,7 +31,15 @@ export default async function PipelinePage() {
       getAgendaDia(),
       getPrimerPatronIa(),
     ]);
-    datos = { leadsKanban, comerciales, pipeline, frios, agendaEvents, patron };
+    datos = {
+      currentUser,
+      leadsKanban,
+      comerciales,
+      pipeline,
+      frios,
+      agendaEvents,
+      patron,
+    };
   } catch (err) {
     return (
       <ErrorView
@@ -41,8 +52,15 @@ export default async function PipelinePage() {
     );
   }
 
-  const { leadsKanban, comerciales, pipeline, frios, agendaEvents, patron } =
-    datos;
+  const {
+    currentUser,
+    leadsKanban,
+    comerciales,
+    pipeline,
+    frios,
+    agendaEvents,
+    patron,
+  } = datos;
 
   const counts = {
     atenderHoy: frios.length,
@@ -61,6 +79,7 @@ export default async function PipelinePage() {
       agendaEvents={agendaEvents}
       sidebarCounts={counts}
       cierreMes={{ valor: 51000, porcentaje: 68, diasRestantes: 6, meta: 75000 }}
+      currentUser={currentUser}
       // El board maneja su propio padding (necesita full-width para scroll
       // horizontal en tablet/mobile).
       mainClassName="pt-5 md:pt-7 pb-16 min-w-0 lg:px-8 lg:py-7"

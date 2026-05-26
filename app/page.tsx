@@ -7,6 +7,7 @@ import { LeadsTable } from "@/components/LeadsTable";
 import { NuevoLeadLauncher } from "@/components/NuevoLeadLauncher";
 import { OpportunityCard } from "@/components/OpportunityCard";
 import { PipelineBar } from "@/components/PipelineBar";
+import { getCurrentUser } from "@/lib/auth";
 import {
   getAgendaDia,
   getLeadsFrios,
@@ -22,15 +23,23 @@ import {
 export default async function Page() {
   let data;
   try {
-    const [pipeline, frios, oportunidades, agendaEvents, patron] =
+    const [currentUser, pipeline, frios, oportunidades, agendaEvents, patron] =
       await Promise.all([
+        getCurrentUser(),
         getPipelineResumen(),
         getLeadsFrios(),
         getOportunidadesDia(),
         getAgendaDia(),
         getPrimerPatronIa(),
       ]);
-    data = { pipeline, frios, oportunidades, agendaEvents, patron };
+    data = {
+      currentUser,
+      pipeline,
+      frios,
+      oportunidades,
+      agendaEvents,
+      patron,
+    };
   } catch (err) {
     return (
       <ErrorView
@@ -43,7 +52,8 @@ export default async function Page() {
     );
   }
 
-  const { pipeline, frios, oportunidades, agendaEvents, patron } = data;
+  const { currentUser, pipeline, frios, oportunidades, agendaEvents, patron } =
+    data;
 
   const cantidadFrios = frios.length;
   const cantidadOportunidades = oportunidades.length;
@@ -65,9 +75,10 @@ export default async function Page() {
       agendaEvents={agendaEvents}
       sidebarCounts={counts}
       cierreMes={{ valor: 51000, porcentaje: 68, diasRestantes: 6, meta: 75000 }}
+      currentUser={currentUser}
     >
       <DashboardHero
-        nombreComercial="Mariana"
+        nombreComercial={currentUser.nombre.split(" ")[0]}
         cantidadFrios={cantidadFrios}
         cantidadReuniones={cantidadAgenda}
         agendaTrigger={<AgendaTrigger count={cantidadAgenda} />}

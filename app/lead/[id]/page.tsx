@@ -9,6 +9,7 @@ import { LeadDataGrid } from "@/components/LeadDataGrid";
 import { LeadHeader } from "@/components/LeadHeader";
 import { NextStepBanner } from "@/components/NextStepBanner";
 import { TimelineContactos } from "@/components/TimelineContactos";
+import { getCurrentUser } from "@/lib/auth";
 import { formatFechaRelativa } from "@/lib/lead-utils";
 import {
   getAgendaDia,
@@ -31,14 +32,16 @@ export default async function LeadPage({
 
   let datos;
   try {
-    const [lead, pipeline, frios, agendaEvents, patron] = await Promise.all([
-      getLeadConDetalle(id),
-      getPipelineResumen(),
-      getLeadsFrios(),
-      getAgendaDia(),
-      getPrimerPatronIa(),
-    ]);
-    datos = { lead, pipeline, frios, agendaEvents, patron };
+    const [currentUser, lead, pipeline, frios, agendaEvents, patron] =
+      await Promise.all([
+        getCurrentUser(),
+        getLeadConDetalle(id),
+        getPipelineResumen(),
+        getLeadsFrios(),
+        getAgendaDia(),
+        getPrimerPatronIa(),
+      ]);
+    datos = { currentUser, lead, pipeline, frios, agendaEvents, patron };
   } catch (err) {
     return (
       <ErrorView
@@ -51,7 +54,7 @@ export default async function LeadPage({
     );
   }
 
-  const { lead, pipeline, frios, agendaEvents, patron } = datos;
+  const { currentUser, lead, pipeline, frios, agendaEvents, patron } = datos;
   if (!lead) notFound();
 
   const counts = {
@@ -74,6 +77,7 @@ export default async function LeadPage({
       agendaEvents={agendaEvents}
       sidebarCounts={counts}
       cierreMes={{ valor: 51000, porcentaje: 68, diasRestantes: 6, meta: 75000 }}
+      currentUser={currentUser}
     >
       {/* Top row: breadcrumb + acciones */}
       <div className="flex items-center justify-between gap-4 mb-6">

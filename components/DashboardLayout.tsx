@@ -3,12 +3,14 @@ import { Backdrop } from "@/components/Backdrop";
 import { DrawerProvider } from "@/components/drawer-context";
 import { SidebarLeft, type SidebarCounts } from "@/components/SidebarLeft";
 import { TopbarMobile } from "@/components/TopbarMobile";
+import type { CurrentUser } from "@/lib/auth";
 import type { EventoAgenda } from "@/lib/types";
 
 interface DashboardLayoutProps {
   agendaEvents: EventoAgenda[];
   sidebarCounts?: SidebarCounts;
   cierreMes?: React.ComponentProps<typeof AgendaPanel>["cierreMes"];
+  currentUser: CurrentUser;
   // Override del className del <main>. Útil para pantallas como el kanban
   // que necesitan controlar el padding lateral (board con scroll horizontal).
   mainClassName?: string;
@@ -24,6 +26,7 @@ export function DashboardLayout({
   agendaEvents,
   sidebarCounts,
   cierreMes,
+  currentUser,
   mainClassName = DEFAULT_MAIN,
   children,
 }: DashboardLayoutProps) {
@@ -32,7 +35,7 @@ export function DashboardLayout({
       <TopbarMobile agendaCount={agendaEvents.length} />
       <Backdrop />
       <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] xl:grid-cols-[220px_1fr_280px] min-h-screen">
-        <SidebarLeft counts={sidebarCounts} />
+        <SidebarLeft counts={sidebarCounts} currentUser={currentUser} />
         <main className={mainClassName}>{children}</main>
         <AgendaPanel events={agendaEvents} cierreMes={cierreMes} />
       </div>

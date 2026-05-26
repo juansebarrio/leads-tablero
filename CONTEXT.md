@@ -67,6 +67,13 @@ Mostrar que JS80 puede construir productos internos completos: arquitectura, dis
 - **Lucide React** únicamente (los SVG del HTML original son de Lucide)
 - Importar individualmente: `import { Search, Calendar } from 'lucide-react'`
 
+### Capa de datos
+
+- Todas las queries viven en `lib/queries.ts`. Server Components y Server Actions las consumen.
+- Server Actions pueden hacer `insert`/`update`/`delete` directos (mutaciones), pero las lecturas siempre pasan por `lib/queries.ts`.
+- El usuario actual se obtiene vía `getCurrentUser()` en `lib/auth.ts`. Hoy devuelve un usuario fijo de demo (Mariana López), mañana lee la sesión real cuando sumemos Supabase Auth.
+- `getCurrentOrgId()` es placeholder hasta que migremos a multi-tenant.
+
 ## 5. Modelo de datos
 
 Detallado en `docs/modelo-datos.md`. Resumen:
