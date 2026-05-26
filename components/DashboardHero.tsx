@@ -7,6 +7,9 @@ interface DashboardHeroProps {
   cantidadReuniones: number;
   // Slot para el botón "Tu día" que aparece en mobile/tablet y abre el drawer.
   agendaTrigger?: React.ReactNode;
+  // Slot para el botón "Nuevo lead" que abre el drawer correspondiente.
+  // Si no se pasa, se muestra un botón estático (modo demo sin acciones).
+  nuevoLeadTrigger?: React.ReactNode;
 }
 
 export function DashboardHero({
@@ -14,6 +17,7 @@ export function DashboardHero({
   cantidadFrios,
   cantidadReuniones,
   agendaTrigger,
+  nuevoLeadTrigger,
 }: DashboardHeroProps) {
   const ahora = new Date();
 
@@ -55,13 +59,15 @@ export function DashboardHero({
           <Download className="w-3.5 h-3.5" strokeWidth={2} />
           Exportar
         </button>
-        <button
-          type="button"
-          className="flex-1 md:flex-none border border-ink bg-ink text-white px-3.5 py-2 rounded-md font-medium text-[12.5px] hover:bg-violeta hover:border-violeta inline-flex items-center justify-center gap-1.5 transition cursor-pointer whitespace-nowrap"
-        >
-          <Plus className="w-3.5 h-3.5" strokeWidth={2.4} />
-          Nuevo lead
-        </button>
+        {nuevoLeadTrigger ?? (
+          <button
+            type="button"
+            className="flex-1 md:flex-none border border-ink bg-ink text-white px-3.5 py-2 rounded-md font-medium text-[12.5px] hover:bg-violeta hover:border-violeta inline-flex items-center justify-center gap-1.5 transition cursor-pointer whitespace-nowrap"
+          >
+            <Plus className="w-3.5 h-3.5" strokeWidth={2.4} />
+            Nuevo lead
+          </button>
+        )}
       </div>
     </div>
   );

@@ -4,6 +4,7 @@ import { DashboardHero } from "@/components/DashboardHero";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { ErrorView, PasosConfigSupabase } from "@/components/ErrorView";
 import { LeadsTable } from "@/components/LeadsTable";
+import { NuevoLeadLauncher } from "@/components/NuevoLeadLauncher";
 import { OpportunityCard } from "@/components/OpportunityCard";
 import { PipelineBar } from "@/components/PipelineBar";
 import {
@@ -70,6 +71,7 @@ export default async function Page() {
         cantidadFrios={cantidadFrios}
         cantidadReuniones={cantidadAgenda}
         agendaTrigger={<AgendaTrigger count={cantidadAgenda} />}
+        nuevoLeadTrigger={<NuevoLeadLauncher />}
       />
 
       <PipelineBar data={pipeline} />

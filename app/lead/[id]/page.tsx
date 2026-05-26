@@ -86,6 +86,7 @@ export default async function LeadPage({
         </Link>
         <LeadActions
           leadId={lead.id}
+          leadNombre={lead.nombre}
           estadoActual={lead.estado}
           agendaCount={agendaEvents.length}
         />

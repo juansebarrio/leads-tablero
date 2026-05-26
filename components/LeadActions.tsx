@@ -1,31 +1,27 @@
 "use client";
 
-import {
-  CheckCircle2,
-  MessageCircle,
-  MoreVertical,
-  PencilLine,
-} from "lucide-react";
+import { CheckCircle2, MoreVertical, PencilLine } from "lucide-react";
 import { AgendaTrigger } from "@/components/AgendaTrigger";
+import { RegistrarContactoLauncher } from "@/components/RegistrarContactoLauncher";
 import { estadoSiguiente } from "@/lib/lead-utils";
 import type { Estado } from "@/lib/types";
 
 interface LeadActionsProps {
   leadId: string;
+  leadNombre: string;
   estadoActual: Estado;
   agendaCount: number;
 }
 
-// Botones del top row de la ficha. Por ahora todos hacen console.log.
-// La próxima sesión conectamos los drawers de "Registrar contacto" y "Editar".
 export function LeadActions({
   leadId,
+  leadNombre,
   estadoActual,
   agendaCount,
 }: LeadActionsProps) {
   const siguiente = estadoSiguiente(estadoActual);
 
-  const onRegistrar = () => console.log("[lead]", leadId, "→ registrar contacto");
+  // Estos siguen con console.log hasta que armemos los próximos drawers.
   const onMover = () =>
     console.log("[lead]", leadId, "→ mover a", siguiente?.estado);
   const onEditar = () => console.log("[lead]", leadId, "→ editar");
@@ -36,15 +32,8 @@ export function LeadActions({
       {/* "Tu día" — solo visible Desktop (1024–1279) */}
       <AgendaTrigger count={agendaCount} />
 
-      {/* Primary: Registrar contacto — siempre visible */}
-      <button
-        type="button"
-        onClick={onRegistrar}
-        className="inline-flex items-center gap-1.5 bg-ink text-white border border-ink px-3.5 py-2 rounded-md font-medium text-[12px] md:text-[12.5px] cursor-pointer hover:bg-violeta hover:border-violeta transition whitespace-nowrap"
-      >
-        <MessageCircle className="w-3 h-3 md:w-3.5 md:h-3.5" strokeWidth={2} />
-        Registrar contacto
-      </button>
+      {/* Primary: Registrar contacto — abre el drawer */}
+      <RegistrarContactoLauncher leadId={leadId} leadNombre={leadNombre} />
 
       {/* Mover + Editar — ocultos en mobile */}
       {siguiente && (
