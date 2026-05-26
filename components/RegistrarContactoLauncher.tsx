@@ -22,7 +22,7 @@ interface RegistrarContactoLauncherProps {
 }
 
 const DEFAULT_BTN =
-  "inline-flex items-center gap-1.5 bg-ink text-white border border-ink px-3.5 py-2 rounded-md font-medium text-[12px] md:text-[12.5px] cursor-pointer hover:bg-violeta hover:border-violeta transition whitespace-nowrap";
+  "inline-flex items-center gap-1.5 bg-ink text-white border border-ink px-2.5 sm:px-3.5 py-2 rounded-md font-medium text-[12px] md:text-[12.5px] cursor-pointer hover:bg-violeta hover:border-violeta transition whitespace-nowrap";
 
 const CANALES: { value: CanalContacto; label: string; icon: LucideIcon }[] = [
   { value: "mail", label: "Mail", icon: Mail },
@@ -63,12 +63,20 @@ export function RegistrarContactoLauncher({
 
   return (
     <>
-      <button type="button" onClick={onOpen} className={className}>
+      <button
+        type="button"
+        onClick={onOpen}
+        className={className}
+        aria-label="Registrar contacto"
+      >
         <MessageCircle
           className="w-3 h-3 md:w-3.5 md:h-3.5"
           strokeWidth={2}
         />
-        Registrar contacto
+        {/* En mobile pequeño, texto corto para no truncar */}
+        <span className="hidden xs:inline sm:hidden">Registrar</span>
+        <span className="hidden sm:inline xs:hidden">Registrar contacto</span>
+        <span className="inline xs:hidden sm:hidden">Contacto</span>
       </button>
       <Form
         key={mountKey}

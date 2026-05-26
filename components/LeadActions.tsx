@@ -1,6 +1,7 @@
 "use client";
 
 import { CheckCircle2, MoreVertical, PencilLine } from "lucide-react";
+import { toast } from "sonner";
 import { AgendaTrigger } from "@/components/AgendaTrigger";
 import { RegistrarContactoLauncher } from "@/components/RegistrarContactoLauncher";
 import { estadoSiguiente } from "@/lib/lead-utils";
@@ -21,11 +22,20 @@ export function LeadActions({
 }: LeadActionsProps) {
   const siguiente = estadoSiguiente(estadoActual);
 
-  // Estos siguen con console.log hasta que armemos los próximos drawers.
+  // Demo: las acciones que aún no tienen drawer real disparan toast.
   const onMover = () =>
-    console.log("[lead]", leadId, "→ mover a", siguiente?.estado);
-  const onEditar = () => console.log("[lead]", leadId, "→ editar");
-  const onMas = () => console.log("[lead]", leadId, "→ más opciones");
+    toast(`Mover a ${siguiente?.label.toLowerCase() ?? "siguiente estado"}`, {
+      description:
+        "En la versión real, esto cambia el estado del lead y registra el movimiento en el historial.",
+    });
+  const onEditar = () =>
+    toast("Editar lead", {
+      description: "El drawer de edición se conecta en la próxima iteración.",
+    });
+  const onMas = () =>
+    toast("Más opciones", {
+      description: "Duplicar, archivar, copiar link y exportar.",
+    });
 
   return (
     <div className="flex items-center gap-2 shrink-0">

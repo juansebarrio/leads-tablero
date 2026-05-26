@@ -49,6 +49,19 @@ export function SidebarLeft({ counts = {}, currentUser }: SidebarLeftProps) {
   const { sidebarOpen, closeAll, openAgenda } = useDrawers();
   const pathname = usePathname();
 
+  // En xl (≥1280px) el AgendaPanel ya está sticky a la derecha. Si el botón
+  // "Agenda" del sidebar abriera el drawer, sería redundante. Hacemos no-op
+  // en xl (igual el panel está visible).
+  const handleAgendaClick = () => {
+    if (
+      typeof window !== "undefined" &&
+      window.matchMedia("(min-width: 1280px)").matches
+    ) {
+      return; // panel ya visible
+    }
+    openAgenda();
+  };
+
   // Una sola lista: primero los items navegables (Atender hoy / Agenda /
   // Pipeline), después los sub-estados del pipeline como info subordinada.
   // La sección "Inteligencia" sigue temporalmente oculta.
@@ -64,7 +77,7 @@ export function SidebarLeft({ counts = {}, currentUser }: SidebarLeftProps) {
       label: "Agenda",
       icon: Calendar,
       count: counts.agenda ?? 0,
-      onClick: openAgenda,
+      onClick: handleAgendaClick,
     },
     { label: "Equipo", icon: Users, href: "/equipo" },
     {
@@ -91,7 +104,7 @@ export function SidebarLeft({ counts = {}, currentUser }: SidebarLeftProps) {
     <aside
       className={`
         bg-panel border-r border-line p-[18px] pt-[22px] flex flex-col gap-5
-        fixed top-0 left-0 h-screen w-[260px] z-70
+        fixed top-0 left-0 h-screen w-[min(260px,80vw)] z-70
         transition-transform duration-250 ease-in-out
         ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
         lg:static lg:translate-x-0 lg:w-[220px] lg:h-screen lg:sticky lg:top-0

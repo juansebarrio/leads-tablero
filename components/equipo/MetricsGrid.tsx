@@ -5,37 +5,48 @@ interface MetricsGridProps {
   comercial: ComercialConMetricas;
 }
 
+function intOrZero(n: unknown): number {
+  const v = Number(n);
+  return Number.isFinite(v) ? Math.trunc(v) : 0;
+}
+
 export function MetricsGrid({ comercial }: MetricsGridProps) {
+  // Defensa contra campos faltantes/string en la view de Supabase.
+  const activos = intOrZero(comercial.leads_activos);
+  const ganadosMes = intOrZero(comercial.ganados_mes_cantidad);
+  const ratio = Number(comercial.ratio_cierre) || 0;
+  const frios = intOrZero(comercial.leads_frios);
+
   return (
     <div className="grid grid-cols-2 gap-3">
       <Metric
         label="Activos"
-        value={String(comercial.leads_activos)}
+        value={String(activos)}
         sub={formatUSD(comercial.pipeline_valor)}
         subStrong
       />
       <Metric
         label="Ganados mes"
-        value={String(comercial.ganados_mes_cantidad)}
+        value={String(ganadosMes)}
         sub={formatUSD(comercial.ganados_mes_valor)}
         subStrong
       />
       <Metric
         label="Ratio cierre"
-        value={`${comercial.ratio_cierre.toFixed(0)}%`}
+        value={`${Math.round(ratio)}%`}
         sub="últimos 90 días"
       />
       <Metric
         label="Leads frío"
-        value={String(comercial.leads_frios)}
+        value={String(frios)}
         sub={
-          comercial.leads_frios === 0
+          frios === 0
             ? "al día"
-            : comercial.leads_frios >= 5
+            : frios >= 5
               ? "requieren atención"
               : "en atención"
         }
-        valueAlert={comercial.leads_frios >= 5}
+        valueAlert={frios >= 5}
       />
     </div>
   );

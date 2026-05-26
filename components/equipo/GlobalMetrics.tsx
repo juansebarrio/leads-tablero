@@ -31,15 +31,21 @@ export function GlobalMetrics({ metricas }: GlobalMetricsProps) {
       <Item
         label="Ganados del mes"
         value={formatUSD(metricas.ganados_mes_valor)}
-        sub={`${metricas.ganados_mes_cantidad} ${metricas.ganados_mes_cantidad === 1 ? "lead cerrado" : "leads cerrados"}`}
+        sub={subGanados(metricas.ganados_mes_cantidad)}
       />
       <Item
         label="Ratio de cierre"
-        value={`${metricas.ratio_cierre.toFixed(0)}%`}
+        value={`${Math.round(Number(metricas.ratio_cierre) || 0)}%`}
         sub="últimos 90 días"
       />
     </div>
   );
+}
+
+function subGanados(cantidad: number | null | undefined): string {
+  const n = Number(cantidad);
+  if (!Number.isFinite(n) || n === 0) return "sin cierres todavía";
+  return `${n} ${n === 1 ? "lead cerrado" : "leads cerrados"}`;
 }
 
 function Item({

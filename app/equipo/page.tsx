@@ -2,7 +2,7 @@ import { DashboardLayout } from "@/components/DashboardLayout";
 import { ComercialCard } from "@/components/equipo/ComercialCard";
 import { GlobalMetrics } from "@/components/equipo/GlobalMetrics";
 import { ErrorView, PasosConfigSupabase } from "@/components/ErrorView";
-import { formatUSD } from "@/lib/format";
+import { formatMesAnio, formatUSD } from "@/lib/format";
 import { getCurrentUser } from "@/lib/auth";
 import {
   getAgendaDia,
@@ -90,10 +90,7 @@ export default async function EquipoPage() {
   ).getDate();
   const diasRestantes = Math.max(0, ultimoDelMes - ahora.getDate());
 
-  const eyebrowMes = ahora.toLocaleDateString("es-AR", {
-    month: "long",
-    year: "numeric",
-  });
+  const eyebrowMes = formatMesAnio(ahora);
 
   // Meta del equipo: suma de metas individuales.
   const metaEquipo = comerciales.reduce((acc, c) => acc + c.meta_mensual, 0);
@@ -107,10 +104,10 @@ export default async function EquipoPage() {
     >
       <header className="mb-7">
         <div className="text-[11px] uppercase tracking-[0.08em] font-semibold text-muted mb-2">
-          Equipo · {capitalize(eyebrowMes)}
+          Equipo · {eyebrowMes}
         </div>
         <h1
-          className="font-display text-[26px] md:text-[30px] xl:text-[36px] font-medium leading-[1.05] -tracking-[0.025em] text-ink mb-2.5"
+          className="font-display text-[26px] md:text-[30px] xl:text-[36px] font-medium leading-[1.05] -tracking-[0.025em] text-ink mb-2.5 text-balance"
           style={{ fontVariationSettings: '"SOFT" 100, "opsz" 144' }}
         >
           Cómo viene <em className="italic text-violeta font-medium">el equipo</em>.
@@ -139,6 +136,3 @@ export default async function EquipoPage() {
   );
 }
 
-function capitalize(s: string): string {
-  return s.charAt(0).toUpperCase() + s.slice(1);
-}

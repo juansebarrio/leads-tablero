@@ -38,6 +38,7 @@ export function KanbanColumn({ estado, nombre, sub, leads }: KanbanColumnProps) 
           : "bg-panel-2 border-line"}
         ${isOver ? "ring-2 ring-violeta ring-offset-2 ring-offset-bg" : ""}
         flex-shrink-0 w-[260px] md:w-[300px] xl:w-auto
+        lg:h-full lg:max-h-full
       `}
     >
       <ColumnHeader

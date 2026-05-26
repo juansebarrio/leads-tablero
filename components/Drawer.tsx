@@ -53,12 +53,14 @@ export function Drawer({
         }`}
       />
 
-      {/* Drawer */}
+      {/* Drawer.
+          En xl (≥1280px) el AgendaPanel (280px) está sticky a la derecha.
+          Empujamos el drawer 280px a la izquierda para no taparlo. */}
       <aside
         role="dialog"
         aria-modal
         className={`
-          fixed top-0 right-0 h-screen bg-panel z-[81] flex flex-col overflow-hidden
+          fixed top-0 right-0 xl:right-[280px] h-screen bg-panel z-[81] flex flex-col overflow-hidden
           shadow-[-8px_0_32px_rgba(14,14,18,0.12)]
           transition-transform duration-250 ease-in-out
           w-full md:w-[var(--drawer-w)] md:max-w-full

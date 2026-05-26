@@ -141,10 +141,14 @@ export async function getComercialesConMetricas(): Promise<
 
 // Sumas del equipo. Las calculamos en JS reusando getComercialesConMetricas
 // para evitar otra view dedicada (y mantener consistencia con los detalles).
+// Defensivo contra valores null/undefined o string-numéricos de Supabase.
 export async function getEquipoMetricas(): Promise<EquipoMetricas> {
   const comerciales = await getComercialesConMetricas();
   const sum = (k: keyof ComercialConMetricas) =>
-    comerciales.reduce((acc, c) => acc + (c[k] as number), 0);
+    comerciales.reduce((acc, c) => {
+      const v = Number(c[k]);
+      return acc + (Number.isFinite(v) ? v : 0);
+    }, 0);
 
   // Ratio de cierre global: promedio simple. No es lo mismo que recalcularlo
   // a nivel agregado, pero alcanza para la card global del equipo.

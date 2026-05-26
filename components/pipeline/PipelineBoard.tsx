@@ -14,6 +14,7 @@ import {
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 import { cambiarEstado } from "@/app/actions/leads";
+import { formatMesAnio } from "@/lib/format";
 import {
   AnimatedCounter,
   formatInt,
@@ -161,14 +162,10 @@ export function PipelineBoard({
       <div className="flex flex-col lg:flex-row lg:justify-between lg:items-end gap-4 lg:gap-6 mb-7 lg:px-0 px-4 md:px-6">
         <div>
           <div className="text-[11px] uppercase tracking-[0.08em] font-semibold text-muted mb-2">
-            Pipeline ·{" "}
-            {new Date().toLocaleDateString("es-AR", {
-              month: "long",
-              year: "numeric",
-            })}
+            Pipeline · {formatMesAnio()}
           </div>
           <h1
-            className="font-display text-[24px] md:text-[30px] xl:text-[36px] font-medium leading-[1.05] -tracking-[0.025em] text-ink mb-2.5"
+            className="font-display text-[24px] md:text-[30px] xl:text-[36px] font-medium leading-[1.05] -tracking-[0.025em] text-ink mb-2.5 text-balance"
             style={{ fontVariationSettings: '"SOFT" 100, "opsz" 144' }}
           >
             Todo lo que está{" "}
@@ -225,14 +222,20 @@ export function PipelineBoard({
           className="
             flex lg:grid xl:grid-cols-5 lg:grid-cols-5
             gap-3 xl:gap-3.5
-            overflow-x-auto lg:overflow-visible
+            overflow-x-auto lg:overflow-x-visible
             px-4 md:px-6 lg:px-0
             pb-8
             snap-x snap-mandatory lg:snap-none
+            lg:max-h-[calc(100vh-220px)] lg:overflow-y-hidden
           "
         >
           {ORDEN.map(({ estado, nombre, sub }) => (
-            <div key={estado} className="snap-start min-w-0">
+            <div
+              key={estado}
+              // shrink-0 evita que en flex mobile las columnas se aplasten
+              // a ~50px. En lg (grid) el item lo dimensiona el track del grid.
+              className="snap-start shrink-0 lg:shrink lg:w-auto min-w-0"
+            >
               <KanbanColumn
                 estado={estado}
                 nombre={nombre}

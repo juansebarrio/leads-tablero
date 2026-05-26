@@ -76,18 +76,21 @@ export function PipelineBar({ data }: PipelineBarProps) {
         ))}
       </div>
 
-      {/* Desktop: grid en columnas / Mobile: lista vertical */}
+      {/* Desktop: grid de stages equi-distribuidos con min-width para no
+          truncar los labels largos ("En conversación"). La barra de arriba
+          sí pondera por cantidad (visual de proporciones). */}
       <div
-        className="hidden md:grid gap-1"
+        className="hidden md:grid gap-2"
         style={{
-          gridTemplateColumns: filas
-            .map((f) => `${Math.max(f.cantidad, 1)}fr`)
-            .join(" "),
+          gridTemplateColumns: `repeat(${filas.length}, minmax(0, 1fr))`,
         }}
       >
         {filas.map((f) => (
           <div key={f.estado} className="flex flex-col gap-1 min-w-0">
-            <div className="text-[11px] text-muted font-medium truncate">
+            <div
+              className="text-[11px] text-muted font-medium truncate"
+              title={NOMBRE_ESTADO[f.estado]}
+            >
               {NOMBRE_ESTADO[f.estado]}
             </div>
             <div className="flex items-baseline gap-1.5">

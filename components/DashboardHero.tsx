@@ -1,4 +1,5 @@
-import { Download, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
+import { ExportarTrigger } from "@/components/ExportarTrigger";
 import { formatEyebrowFecha, saludoSegunHora } from "@/lib/format";
 
 interface DashboardHeroProps {
@@ -28,7 +29,7 @@ export function DashboardHero({
           {formatEyebrowFecha(ahora)}
         </div>
         <h1
-          className="font-display text-[26px] md:text-4xl xl:text-[36px] font-medium tracking-tight text-ink leading-[1.1]"
+          className="font-display text-[26px] md:text-4xl xl:text-[36px] font-medium tracking-tight text-ink leading-[1.1] text-balance"
           style={{ fontVariationSettings: '"SOFT" 100, "opsz" 144' }}
         >
           Hola {nombreComercial},{" "}
@@ -37,7 +38,7 @@ export function DashboardHero({
           </em>
           .
         </h1>
-        <p className="text-[13.5px] text-muted mt-2 max-w-[480px]">
+        <p className="text-[13.5px] text-muted mt-2 max-w-[480px] text-pretty">
           Tenés{" "}
           <strong className="text-ink-2 font-semibold">
             {cantidadFrios} leads
@@ -52,13 +53,7 @@ export function DashboardHero({
 
       <div className="flex items-center gap-2.5 flex-shrink-0 md:mt-6 flex-wrap">
         {agendaTrigger}
-        <button
-          type="button"
-          className="flex-1 md:flex-none border border-line bg-panel text-ink-2 px-3.5 py-2 rounded-md font-medium text-[12.5px] hover:border-ink-2 inline-flex items-center justify-center gap-1.5 transition cursor-pointer whitespace-nowrap"
-        >
-          <Download className="w-3.5 h-3.5" strokeWidth={2} />
-          Exportar
-        </button>
+        <ExportarTrigger />
         {nuevoLeadTrigger ?? (
           <button
             type="button"

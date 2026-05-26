@@ -83,10 +83,11 @@ export default async function LeadPage({
       <div className="flex items-center justify-between gap-4 mb-6">
         <Link
           href="/"
-          className="inline-flex items-center gap-1.5 text-[12.5px] text-muted hover:text-ink px-2 py-1 -ml-2 rounded-md hover:bg-line-2 transition cursor-pointer"
+          className="inline-flex items-center gap-1.5 text-[12.5px] text-muted hover:text-ink px-2 py-1 -ml-2 rounded-md hover:bg-line-2 transition cursor-pointer whitespace-nowrap shrink-0"
         >
           <ArrowLeft className="w-3.5 h-3.5" strokeWidth={2} />
-          Volver al tablero
+          <span className="hidden sm:inline">Volver al tablero</span>
+          <span className="inline sm:hidden">Tablero</span>
         </Link>
         <LeadActions
           leadId={lead.id}
@@ -105,7 +106,7 @@ export default async function LeadPage({
       <section className="mb-9">
         <div className="flex items-baseline justify-between gap-3.5 mb-4">
           <h2
-            className="font-display font-medium text-[19px] md:text-[22px] -tracking-[0.02em] leading-none text-ink"
+            className="font-display font-medium text-[19px] md:text-[22px] -tracking-[0.02em] leading-none text-ink text-balance"
             style={{ fontVariationSettings: '"SOFT" 100, "opsz" 144' }}
           >
             Historial de{" "}
@@ -126,7 +127,7 @@ export default async function LeadPage({
       <section className="mb-9">
         <div className="flex items-baseline justify-between gap-3.5 mb-4">
           <h2
-            className="font-display font-medium text-[19px] md:text-[22px] -tracking-[0.02em] leading-none text-ink"
+            className="font-display font-medium text-[19px] md:text-[22px] -tracking-[0.02em] leading-none text-ink text-balance"
             style={{ fontVariationSettings: '"SOFT" 100, "opsz" 144' }}
           >
             En <em className="italic text-violeta font-medium">agenda</em>

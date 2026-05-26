@@ -3,9 +3,10 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { motion } from "framer-motion";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { WonCheckmark } from "@/components/pipeline/WonCheckmark";
 import { formatUSDCorto } from "@/lib/format";
+import { formatFechaCorta } from "@/lib/lead-utils";
 import type {
   LeadKanban,
   Origen,
@@ -39,7 +40,11 @@ const TIPO_LABEL: Record<TipoNegocio, string> = {
 };
 
 // Card del kanban. Sortable (drag entre columnas + dentro) con animaciones.
+// Click en cualquier zona de la card → navega al detalle. El drag se activa
+// solo después de 6px de movimiento (PointerSensor activationConstraint),
+// así click puro no triggea drag y vice versa.
 export function KanbanCard({ lead, overlay = false }: KanbanCardProps) {
+  const router = useRouter();
   const sortable = useSortable({
     id: lead.id,
     data: { estado: lead.estado },
@@ -72,6 +77,20 @@ export function KanbanCard({ lead, overlay = false }: KanbanCardProps) {
       style={style}
       {...attributes}
       {...listeners}
+      role={overlay ? undefined : "link"}
+      tabIndex={overlay ? undefined : 0}
+      aria-label={overlay ? undefined : `Abrir ${lead.nombre}`}
+      onClick={overlay ? undefined : () => router.push(`/lead/${lead.id}`)}
+      onKeyDown={
+        overlay
+          ? undefined
+          : (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                router.push(`/lead/${lead.id}`);
+              }
+            }
+      }
       className={`
         relative bg-panel border rounded-lg p-3.5 flex flex-col gap-2.5 cursor-grab active:cursor-grabbing
         ${isGanado
@@ -81,21 +100,17 @@ export function KanbanCard({ lead, overlay = false }: KanbanCardProps) {
           ? "shadow-[0_20px_50px_rgba(14,14,18,0.18),0_4px_12px_rgba(14,14,18,0.08)] !border-violeta"
           : ""}
         ${isPlaceholder ? "opacity-30" : ""}
-        ${!overlay && !isPlaceholder ? "hover:-translate-y-0.5 hover:border-ink-2 hover:shadow-[0_8px_24px_rgba(14,14,18,0.06),0_2px_6px_rgba(14,14,18,0.04)]" : ""}
+        ${!overlay && !isPlaceholder ? "hover:-translate-y-0.5 hover:border-ink-2 hover:shadow-[0_8px_24px_rgba(14,14,18,0.06),0_2px_6px_rgba(14,14,18,0.04)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violeta focus-visible:ring-offset-2 focus-visible:ring-offset-bg" : ""}
         transition-[transform,box-shadow,border-color] duration-150 ease-out
       `}
     >
       {isGanado && <WonCheckmark />}
 
       <div className="flex items-start justify-between gap-2.5 min-w-0">
-        <Link
-          href={`/lead/${lead.id}`}
-          onPointerDown={(e) => e.stopPropagation()}
-          onClick={(e) => e.stopPropagation()}
-          className="min-w-0 flex-1"
-        >
+        <div className="min-w-0 flex-1">
           <div
-            className="font-display font-medium text-[14.5px] leading-[1.2] -tracking-[0.01em] text-ink mb-1 truncate hover:text-violeta transition-colors"
+            title={lead.nombre}
+            className="font-display font-medium text-[14.5px] leading-[1.2] -tracking-[0.01em] text-ink mb-1 truncate"
             style={{ fontVariationSettings: '"opsz" 144' }}
           >
             {lead.nombre}
@@ -106,7 +121,7 @@ export function KanbanCard({ lead, overlay = false }: KanbanCardProps) {
               {ORIGEN_LABEL[lead.origen]}
             </span>
           </div>
-        </Link>
+        </div>
       </div>
 
       <div>
@@ -159,8 +174,7 @@ export function KanbanCard({ lead, overlay = false }: KanbanCardProps) {
 
 function labelTiempo(lead: LeadKanban): string {
   if (lead.estado === "ganado") {
-    const d = new Date(lead.fecha_creacion);
-    return `ganado el ${d.toLocaleDateString("es-AR", { day: "numeric", month: "short" })}`;
+    return `ganado el ${formatFechaCorta(lead.fecha_creacion)}`;
   }
   return `${lead.dias_en_estado}d acá`;
 }

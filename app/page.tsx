@@ -135,7 +135,7 @@ function SectionHeader({
   return (
     <div className="flex items-baseline justify-between gap-3.5 mb-3.5">
       <h2
-        className="font-display font-medium text-xl md:text-[22px] -tracking-[0.02em] leading-none text-ink"
+        className="font-display font-medium text-xl md:text-[22px] -tracking-[0.02em] leading-none text-ink text-balance"
         style={{ fontVariationSettings: '"SOFT" 100, "opsz" 144' }}
       >
         {title}{" "}
