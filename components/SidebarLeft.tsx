@@ -20,7 +20,7 @@ import type { CurrentUser } from "@/lib/auth";
 export type SidebarCounts = {
   atenderHoy?: number;
   agenda?: number;
-  pipeline?: number; // total de leads del pipeline
+  pipeline?: number;
   nuevos?: number;
   conversacion?: number;
   propuesta?: number;
@@ -35,17 +35,23 @@ interface SidebarLeftProps {
 
 type NavItem = {
   label: string;
-  icon: LucideIcon;
+  icon?: LucideIcon;
   count?: number | null;
   alert?: boolean;
+  // Navegación: si tiene href es <Link>. Si tiene onClick es <button>.
+  // Si no tiene ninguno → InfoRow subordinado (no clickeable).
   href?: string;
+  onClick?: () => void;
 };
 
 export function SidebarLeft({ counts = {}, currentUser }: SidebarLeftProps) {
-  const { sidebarOpen, closeAll } = useDrawers();
+  const { sidebarOpen, closeAll, openAgenda } = useDrawers();
   const pathname = usePathname();
 
-  const hoy: NavItem[] = [
+  // Una sola lista: primero los items navegables (Atender hoy / Agenda /
+  // Pipeline), después los sub-estados del pipeline como info subordinada.
+  // La sección "Inteligencia" sigue temporalmente oculta.
+  const items: NavItem[] = [
     {
       label: "Atender hoy",
       icon: Target,
@@ -53,10 +59,12 @@ export function SidebarLeft({ counts = {}, currentUser }: SidebarLeftProps) {
       alert: true,
       href: "/",
     },
-    { label: "Agenda", icon: Calendar, count: counts.agenda ?? 0 },
-  ];
-
-  const pipeline: NavItem[] = [
+    {
+      label: "Agenda",
+      icon: Calendar,
+      count: counts.agenda ?? 0,
+      onClick: openAgenda,
+    },
     {
       label: "Pipeline",
       icon: BarChart3,
@@ -76,9 +84,6 @@ export function SidebarLeft({ counts = {}, currentUser }: SidebarLeftProps) {
       count: counts.ganados === null ? null : counts.ganados ?? 0,
     },
   ];
-
-  // Sección "Inteligencia" temporalmente oculta del menú (Patrones / Conversión
-  // / Equipo). Las rutas siguen vivas: /equipo sigue accesible por URL.
 
   return (
     <aside
@@ -117,18 +122,23 @@ export function SidebarLeft({ counts = {}, currentUser }: SidebarLeftProps) {
         </span>
       </div>
 
-      <NavSection
-        title="Hoy"
-        items={hoy}
-        pathname={pathname}
-        onItemClick={closeAll}
-      />
-      <NavSection
-        title="Pipeline"
-        items={pipeline}
-        pathname={pathname}
-        onItemClick={closeAll}
-      />
+      {/* Nav: sin títulos de sección — Pipeline + sus sub-estados quedan
+          agrupados visualmente por la indentación de los InfoRow. */}
+      <nav>
+        {items.map((item) => {
+          if (item.href || item.onClick) {
+            return (
+              <PrimaryItem
+                key={item.label}
+                item={item}
+                pathname={pathname}
+                onAfterClick={closeAll}
+              />
+            );
+          }
+          return <InfoRow key={item.label} item={item} />;
+        })}
+      </nav>
 
       {/* Foot: usuario actual (via getCurrentUser) */}
       <div className="mt-auto pt-3.5 border-t border-line flex items-center gap-2.5">
@@ -149,66 +159,27 @@ export function SidebarLeft({ counts = {}, currentUser }: SidebarLeftProps) {
   );
 }
 
-function NavSection({
-  title,
-  items,
-  pathname,
-  onItemClick,
-}: {
-  title: string;
-  items: NavItem[];
-  pathname: string;
-  onItemClick: () => void;
-}) {
-  return (
-    <div>
-      <div className="text-[10.5px] font-semibold text-muted-2 tracking-[0.06em] uppercase mb-1.5 px-1.5">
-        {title}
-      </div>
-      {items.map((item) => {
-        // Items navegables → estilo principal (link con icono, bg negro
-        // si activo). Items sin href → "info row" subordinada (sin icono,
-        // texto más chico y muteado, no clickable).
-        if (item.href) {
-          return (
-            <PrimaryItem
-              key={item.label}
-              item={item}
-              pathname={pathname}
-              onClick={onItemClick}
-            />
-          );
-        }
-        return <InfoRow key={item.label} item={item} />;
-      })}
-    </div>
-  );
-}
-
 function PrimaryItem({
   item,
   pathname,
-  onClick,
+  onAfterClick,
 }: {
   item: NavItem;
   pathname: string;
-  onClick: () => void;
+  // En mobile cerramos el sidebar después de cualquier nav. En desktop es
+  // sticky, así que es no-op visible.
+  onAfterClick: () => void;
 }) {
   const Icon = item.icon;
   const isActive = item.href !== undefined && pathname === item.href;
-  return (
-    <Link
-      href={item.href!}
-      onClick={onClick}
-      className={`
-        w-full flex items-center gap-2.5 px-2 py-1.5 my-px rounded-md text-[12.5px] cursor-pointer transition
-        ${isActive ? "bg-ink text-white font-medium" : "text-ink-2 hover:bg-line-2"}
-      `}
-    >
-      <Icon
-        className={`w-3.5 h-3.5 shrink-0 ${isActive ? "text-white" : "text-muted"}`}
-        strokeWidth={2}
-      />
+  const content = (
+    <>
+      {Icon && (
+        <Icon
+          className={`w-3.5 h-3.5 shrink-0 ${isActive ? "text-white" : "text-muted"}`}
+          strokeWidth={2}
+        />
+      )}
       <span className="text-left flex-1">{item.label}</span>
       {item.count !== undefined && (
         <span
@@ -226,13 +197,38 @@ function PrimaryItem({
           {item.count === null ? "—" : item.count}
         </span>
       )}
-    </Link>
+    </>
+  );
+  const className = `
+    w-full flex items-center gap-2.5 px-2 py-1.5 my-px rounded-md text-[12.5px] cursor-pointer transition
+    ${isActive ? "bg-ink text-white font-medium" : "text-ink-2 hover:bg-line-2"}
+  `;
+
+  if (item.href) {
+    return (
+      <Link href={item.href} onClick={onAfterClick} className={className}>
+        {content}
+      </Link>
+    );
+  }
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        item.onClick?.();
+        // No llamamos onAfterClick acá: si la acción fue openAgenda, ya
+        // cierra el sidebar y abre la agenda en un solo paso.
+      }}
+      className={className}
+    >
+      {content}
+    </button>
   );
 }
 
-// Item subordinado: no es navegable, solo informativo (filtro o métrica).
-// Sin icono, texto chico, padding lateral igual al icono del PrimaryItem
-// para que quede alineado visualmente.
+// Item subordinado: no es navegable, solo informativo (sub-estado del
+// pipeline). Sin icono, texto chico, padding lateral igual al del icono
+// del PrimaryItem para quedar visualmente alineado/anidado.
 function InfoRow({ item }: { item: NavItem }) {
   return (
     <div className="flex items-center gap-2.5 pl-[26px] pr-2 py-1 my-px text-[11.5px] text-muted-2">
