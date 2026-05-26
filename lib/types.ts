@@ -80,6 +80,12 @@ export type Contacto = {
   fecha: string;
   canal: CanalContacto;
   nota: string | null;
+  metadata?: Record<string, unknown>;
+};
+
+// Devuelto por v_leads_kanban.
+export type LeadKanban = LeadConComercial & {
+  dias_en_estado: number;
 };
 
 // Devuelto por getLeadConDetalle.

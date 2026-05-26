@@ -1,0 +1,1376 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=1440" />
+<title>JS80 · Pipeline · Kanban</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F7F6F2;
+    --panel: #FFFFFF;
+    --panel-2: #FBFAF6;
+    --ink: #0E0E12;
+    --ink-2: #2A2A33;
+    --muted: #6B6B75;
+    --muted-2: #9A9AA3;
+    --line: #E8E6DE;
+    --line-2: #F0EEE6;
+    --azul: #6B8CFF;
+    --azul-soft: #EDF1FF;
+    --violeta: #8B6FFF;
+    --violeta-soft: #F1ECFF;
+    --turquesa: #5DC7E0;
+    --turquesa-soft: #E5F4F9;
+    --coral: #FF8AA0;
+    --coral-soft: #FFE8EE;
+    --rojo: #C8362E;
+    --rojo-soft: #FBEAE7;
+    --amarillo: #B8860B;
+    --amarillo-soft: #FBF3DB;
+    --verde: #3E8A5A;
+    --verde-soft: #E6F1EB;
+    --display: 'Fraunces', Georgia, serif;
+    --body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    font-family: var(--body);
+    color: var(--ink);
+    background: var(--bg);
+    font-size: 13px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  svg { display: block; }
+
+  .app {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    min-height: 100vh;
+  }
+
+  /* SIDEBAR — igual que el resto */
+  .sidebar {
+    background: var(--panel);
+    border-right: 1px solid var(--line);
+    padding: 22px 18px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+  }
+  .brand-block {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--line);
+  }
+  .nucleus {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    background: conic-gradient(from 200deg, #FF8AA0 0deg, #FFB088 60deg, #6B8CFF 160deg, #8B6FFF 230deg, #5DC7E0 310deg, #FF8AA0 360deg);
+    flex-shrink: 0;
+  }
+  .brand-name { font-family: var(--display); font-weight: 600; font-size: 17px; letter-spacing: -0.01em; line-height: 1; }
+  .brand-sub { font-size: 10.5px; color: var(--muted); margin-top: 3px; }
+  .nav-title { font-size: 10.5px; font-weight: 600; color: var(--muted-2); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 6px; padding: 0 6px; }
+  .nav-item { display: flex; align-items: center; gap: 9px; padding: 6px 8px; margin: 1px 0; border-radius: 6px; font-size: 12.5px; color: var(--ink-2); cursor: pointer; }
+  .nav-item .nav-icon { width: 14px; height: 14px; color: var(--muted); flex-shrink: 0; }
+  .nav-item:hover { background: var(--line-2); }
+  .nav-item.active { background: var(--ink); color: white; font-weight: 500; }
+  .nav-item.active .nav-icon { color: white; }
+  .nav-item.active .nav-count { background: rgba(255,255,255,0.16); color: white; }
+  .nav-count { margin-left: auto; font-size: 10.5px; background: var(--line-2); color: var(--muted); padding: 1px 6px; border-radius: 999px; font-weight: 500; }
+  .nav-count.alert { background: var(--rojo-soft); color: var(--rojo); }
+  .sidebar-foot { margin-top: auto; padding-top: 14px; border-top: 1px solid var(--line); display: flex; align-items: center; gap: 10px; }
+  .user-mini-avatar {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #8B6FFF, #5DC7E0);
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-weight: 600; font-size: 11px;
+  }
+  .user-mini-name { font-weight: 600; color: var(--ink); font-size: 12px; }
+  .user-mini-role { color: var(--muted); font-size: 10.5px; }
+
+  /* ============================================ */
+  /* MAIN PIPELINE                                 */
+  /* ============================================ */
+  .main {
+    padding: 28px 32px 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  /* Header de la página */
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 28px;
+    gap: 24px;
+  }
+  .page-eyebrow {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .page-title {
+    font-family: var(--display);
+    font-weight: 500;
+    font-variation-settings: "SOFT" 100, "opsz" 144;
+    font-size: 36px;
+    line-height: 1.05;
+    letter-spacing: -0.025em;
+    color: var(--ink);
+    margin-bottom: 10px;
+  }
+  .page-title em {
+    font-style: italic;
+    color: var(--violeta);
+    font-weight: 500;
+  }
+  .page-sub {
+    font-size: 13.5px;
+    color: var(--muted);
+  }
+  .page-sub strong { color: var(--ink); font-weight: 600; }
+  .page-sub .dot { margin: 0 8px; color: var(--muted-2); }
+
+  /* Filtros (chips de comerciales) */
+  .filters {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .filter-label {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    font-weight: 600;
+    margin-right: 4px;
+  }
+  .filter-chip {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 5px 10px 5px 5px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-size: 12px;
+    color: var(--ink-2);
+    font-weight: 500;
+  }
+  .filter-chip:hover { border-color: var(--ink-2); }
+  .filter-chip.all {
+    padding: 5px 12px;
+    background: var(--ink);
+    color: white;
+    border-color: var(--ink);
+  }
+  .filter-avatar {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: white;
+    font-size: 9.5px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .av-ml { background: linear-gradient(135deg, #8B6FFF, #5DC7E0); }
+  .av-dt { background: linear-gradient(135deg, #FF8AA0, #FFB088); }
+  .av-sm { background: linear-gradient(135deg, #6B8CFF, #8B6FFF); }
+  .av-na { background: var(--line); color: var(--muted); border: 1px dashed var(--muted-2); }
+
+  /* ============================================ */
+  /* COLUMNAS DEL KANBAN                          */
+  /* ============================================ */
+  .board {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 14px;
+    flex: 1;
+    padding-bottom: 32px;
+  }
+
+  .column {
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    transition: all 0.2s;
+  }
+
+  /* Header de columna */
+  .col-header {
+    padding: 16px 16px 14px;
+    border-bottom: 1px solid var(--line);
+    position: relative;
+  }
+  .col-header::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 16px;
+    right: 16px;
+    height: 3px;
+    border-radius: 0 0 3px 3px;
+  }
+  .column[data-state="nuevos"] .col-header::before { background: var(--azul-soft); }
+  .column[data-state="conversacion"] .col-header::before { background: var(--azul); }
+  .column[data-state="propuesta"] .col-header::before { background: var(--violeta); }
+  .column[data-state="cierre"] .col-header::before { background: var(--coral); }
+  .column[data-state="ganados"] .col-header::before { background: var(--verde); }
+
+  .col-top {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  .col-name {
+    font-size: 11.5px;
+    color: var(--muted);
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .col-count {
+    font-family: var(--display);
+    font-weight: 600;
+    font-variation-settings: "opsz" 144;
+    font-size: 14px;
+    color: var(--ink);
+    background: var(--panel);
+    border: 1px solid var(--line);
+    padding: 2px 9px;
+    border-radius: 999px;
+    line-height: 1.3;
+  }
+  .col-value {
+    font-family: var(--display);
+    font-weight: 600;
+    font-variation-settings: "opsz" 144;
+    font-size: 20px;
+    letter-spacing: -0.015em;
+    color: var(--ink);
+    line-height: 1;
+  }
+  .col-value-sub {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 3px;
+  }
+
+  /* Body de columna (donde caen las cards) */
+  .col-body {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex: 1;
+    overflow-y: auto;
+    min-height: 200px;
+  }
+
+  /* ============================================ */
+  /* CARD DEL LEAD                                 */
+  /* ============================================ */
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    cursor: grab;
+    transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+  }
+  .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(14,14,18,0.06), 0 2px 6px rgba(14,14,18,0.04);
+    border-color: var(--ink-2);
+  }
+  .card:active { cursor: grabbing; }
+
+  /* Estados de drag (simulados visualmente para el mockup) */
+  .card.dragging {
+    transform: translateY(-4px) scale(1.04) rotate(2deg);
+    box-shadow: 0 20px 50px rgba(14,14,18,0.18), 0 4px 12px rgba(14,14,18,0.08);
+    border-color: var(--violeta);
+    z-index: 10;
+    cursor: grabbing;
+  }
+
+  .card-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .card-title-block { min-width: 0; flex: 1; }
+  .card-title {
+    font-family: var(--display);
+    font-weight: 500;
+    font-variation-settings: "opsz" 144;
+    font-size: 14.5px;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    margin-bottom: 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .card-meta {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 10.5px;
+    color: var(--muted);
+  }
+  .card-source-tag {
+    background: var(--line-2);
+    color: var(--ink-2);
+    padding: 1px 7px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 500;
+  }
+  .heat-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .heat-dot.hot { background: var(--rojo); }
+  .heat-dot.warm { background: var(--amarillo); }
+  .heat-dot.med { background: var(--violeta); }
+  .heat-dot.cool { background: var(--turquesa); }
+  .heat-dot.won { background: var(--verde); }
+
+  .card-value {
+    font-family: var(--display);
+    font-weight: 600;
+    font-variation-settings: "opsz" 144;
+    font-size: 18px;
+    letter-spacing: -0.015em;
+    color: var(--ink);
+    line-height: 1;
+  }
+  .card-value-sub {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  .card-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding-top: 10px;
+    border-top: 1px solid var(--line-2);
+  }
+  .card-owner {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11.5px;
+    color: var(--ink-2);
+  }
+  .card-owner-avatar {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: white;
+    font-size: 9px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .card-time {
+    font-size: 10.5px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .card-time.stuck { color: var(--amarillo); font-weight: 600; }
+  .card-time-dot {
+    width: 4px; height: 4px;
+    border-radius: 50%;
+    background: var(--muted-2);
+  }
+  .card-time.stuck .card-time-dot { background: var(--amarillo); }
+
+  /* ============================================ */
+  /* COLUMNA "GANADOS" · vitrina con glow         */
+  /* ============================================ */
+  .column[data-state="ganados"] {
+    background: linear-gradient(180deg, #F2F8F4 0%, #E6F1EB 100%);
+    border-color: #C9E2D2;
+    box-shadow: 0 0 0 1px rgba(62, 138, 90, 0.08), 0 4px 24px rgba(62, 138, 90, 0.06);
+  }
+  .column[data-state="ganados"] .col-header {
+    border-bottom-color: #C9E2D2;
+  }
+  .column[data-state="ganados"] .col-name {
+    color: var(--verde);
+  }
+  .column[data-state="ganados"] .col-count {
+    background: white;
+    border-color: #C9E2D2;
+    color: var(--verde);
+  }
+  .column[data-state="ganados"] .col-value {
+    color: var(--verde);
+  }
+
+  /* Card en Ganados: borde más fino verde, glow sutil, checkmark */
+  .column[data-state="ganados"] .card {
+    border-color: #C9E2D2;
+    background: linear-gradient(180deg, #FFFFFF 0%, #F8FCFA 100%);
+    box-shadow: 0 0 0 1px rgba(62, 138, 90, 0.04), 0 2px 8px rgba(62, 138, 90, 0.06);
+  }
+  .column[data-state="ganados"] .card::after {
+    content: "";
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--verde) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.5'><path d='m5 12 5 5 9-11'/></svg>") center/12px no-repeat;
+    box-shadow: 0 2px 6px rgba(62, 138, 90, 0.25);
+  }
+  .column[data-state="ganados"] .card:hover {
+    box-shadow: 0 0 0 1px rgba(62, 138, 90, 0.12), 0 12px 32px rgba(62, 138, 90, 0.12);
+    transform: translateY(-2px);
+    border-color: var(--verde);
+  }
+
+  /* ============================================ */
+  /* AI HINT FLOTANTE                              */
+  /* (se muestra arriba de las columnas que       */
+  /*  tienen leads atascados)                     */
+  /* ============================================ */
+  .col-hint {
+    background: var(--amarillo-soft);
+    border: 1px solid #EBD9A1;
+    border-radius: 6px;
+    padding: 7px 10px;
+    margin: 10px 12px 0;
+    font-size: 11px;
+    color: var(--amarillo);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 500;
+  }
+  .col-hint-icon {
+    flex-shrink: 0;
+  }
+
+  /* ============================================ */
+  /* DROP ZONE (estado vacío de una columna)      */
+  /* ============================================ */
+  .drop-zone-empty {
+    background: transparent;
+    border: 1.5px dashed var(--line);
+    border-radius: 8px;
+    padding: 24px 14px;
+    text-align: center;
+    color: var(--muted-2);
+    font-size: 11.5px;
+    margin: 0;
+  }
+
+  /* Animación de pulse sutil para el indicador "ahora" */
+  @keyframes subtle-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.55; }
+  }
+
+  /* Counter de columna con underline animado al cambiar
+     (en producción se anima con framer-motion) */
+  .col-value-anim {
+    display: inline-block;
+    position: relative;
+  }
+
+  /* ============================================ */
+  /* TOPBAR MÓVIL                                  */
+  /* ============================================ */
+  .topbar-mobile {
+    display: none;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: var(--panel);
+    border-bottom: 1px solid var(--line);
+    padding: 12px 16px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .tb-brand { display: flex; align-items: center; gap: 8px; }
+  .tb-brand-name {
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 15px;
+    letter-spacing: -0.01em;
+  }
+  .tb-btn {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    width: 38px; height: 38px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--ink-2);
+    cursor: pointer;
+    position: relative;
+  }
+  .tb-btn-count {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    background: var(--rojo);
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    border-radius: 999px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--panel);
+  }
+  .backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(14, 14, 18, 0.4);
+    z-index: 60;
+  }
+  .backdrop.active { display: block; }
+
+  /* ============================================ */
+  /* DESKTOP 1024–1279 · más compacto              */
+  /* ============================================ */
+  @media (max-width: 1279px) {
+    .main { padding: 24px 24px 0; }
+    .board { gap: 10px; }
+    .col-header { padding: 14px 14px 12px; }
+    .col-value { font-size: 18px; }
+    .col-body { padding: 10px; gap: 8px; }
+    .card { padding: 12px; gap: 8px; }
+    .card-title { font-size: 13.5px; }
+    .card-value { font-size: 16px; }
+    .page-title { font-size: 30px; }
+    /* Filtros más compactos */
+    .filter-chip { padding: 4px 9px 4px 4px; font-size: 11.5px; }
+    .filter-avatar { width: 20px; height: 20px; font-size: 9px; }
+  }
+
+  /* ============================================ */
+  /* TABLET 768–1023 · scroll horizontal           */
+  /* ============================================ */
+  @media (max-width: 1023px) {
+    .app { grid-template-columns: 1fr; }
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 260px;
+      height: 100vh;
+      z-index: 70;
+      transform: translateX(-100%);
+      transition: transform 0.25s ease;
+      box-shadow: 8px 0 32px rgba(14,14,18,0.08);
+    }
+    .sidebar.open { transform: translateX(0); }
+    .topbar-mobile { display: flex; }
+
+    .main { padding: 20px 0 0; }
+
+    /* Header con padding lateral */
+    .page-header {
+      padding: 0 24px;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 20px;
+    }
+
+    /* Filtros: scroll horizontal */
+    .filters {
+      width: 100%;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      scrollbar-width: thin;
+    }
+    .filters::-webkit-scrollbar { height: 4px; }
+    .filters::-webkit-scrollbar-thumb { background: var(--line); border-radius: 2px; }
+
+    /* Board: scroll horizontal con padding inset */
+    .board {
+      display: flex;
+      overflow-x: auto;
+      padding: 0 24px 32px;
+      scroll-snap-type: x mandatory;
+      scrollbar-width: thin;
+    }
+    .board::-webkit-scrollbar { height: 8px; }
+    .board::-webkit-scrollbar-thumb { background: var(--line); border-radius: 4px; }
+    .column {
+      flex: 0 0 300px;
+      scroll-snap-align: start;
+      min-width: 0;
+    }
+  }
+
+  /* ============================================ */
+  /* MOBILE <768                                   */
+  /* ============================================ */
+  @media (max-width: 767px) {
+    .main { padding: 14px 0 0; }
+    .page-header { padding: 0 16px; gap: 16px; margin-bottom: 22px; }
+    .page-title { font-size: 24px; }
+
+    /* Page sub: cada métrica en su línea para legibilidad */
+    .page-sub {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 12.5px;
+    }
+    .page-sub .dot { display: none; }
+
+    .board { padding: 0 16px 32px; gap: 12px; }
+    .column {
+      flex: 0 0 260px;
+    }
+
+    /* Header de columna más chico */
+    .col-header { padding: 12px 12px 10px; }
+    .col-name { font-size: 11px; }
+    .col-value { font-size: 17px; }
+    .col-value-sub { font-size: 10.5px; }
+
+    /* Cards más compactas */
+    .card { padding: 12px; gap: 8px; }
+    .card-title { font-size: 13.5px; }
+    .card-value { font-size: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- TOPBAR MÓVIL (oculto en desktop) -->
+<header class="topbar-mobile">
+  <button class="tb-btn" id="open-sidebar" aria-label="Abrir menú">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+  </button>
+  <div class="tb-brand">
+    <div class="nucleus" style="width:24px;height:24px"></div>
+    <span class="tb-brand-name">js80</span>
+  </div>
+  <button class="tb-btn" id="open-agenda" aria-label="Ver agenda">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+    <span class="tb-btn-count">4</span>
+  </button>
+</header>
+
+<div class="backdrop" id="backdrop"></div>
+
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="brand-block">
+      <div class="nucleus"></div>
+      <div>
+        <div class="brand-name">js80</div>
+        <div class="brand-sub">Tablero de leads</div>
+      </div>
+    </div>
+
+    <div>
+      <div class="nav-title">Hoy</div>
+      <div class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 2v4M2 12h4M12 22v-4M22 12h-4"/></svg>
+        Atender hoy
+        <span class="nav-count alert">8</span>
+      </div>
+      <div class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+        Agenda
+        <span class="nav-count">4</span>
+      </div>
+    </div>
+
+    <div>
+      <div class="nav-title">Pipeline</div>
+      <div class="nav-item active">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="6" height="18" rx="1"/><rect x="11" y="3" width="6" height="11" rx="1"/><rect x="19" y="3" width="2" height="14" rx="1"/></svg>
+        Pipeline
+      </div>
+      <div class="nav-item">Leads nuevos<span class="nav-count">6</span></div>
+      <div class="nav-item">En conversación<span class="nav-count">8</span></div>
+      <div class="nav-item">Propuestas<span class="nav-count">7</span></div>
+      <div class="nav-item">Cerrados<span class="nav-count">—</span></div>
+    </div>
+
+    <div>
+      <div class="nav-title">Inteligencia</div>
+      <div class="nav-item">Patrones<span class="nav-count">1</span></div>
+      <div class="nav-item">Conversión</div>
+      <div class="nav-item">Equipo</div>
+    </div>
+
+    <div class="sidebar-foot">
+      <div class="user-mini-avatar">ML</div>
+      <div>
+        <div class="user-mini-name">Mariana López</div>
+        <div class="user-mini-role">Comercial</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN PIPELINE -->
+  <main class="main">
+
+    <!-- Header -->
+    <div class="page-header">
+      <div>
+        <div class="page-eyebrow">Pipeline · Mayo 2026</div>
+        <h1 class="page-title">Todo lo que está <em>en juego</em>.</h1>
+        <div class="page-sub">
+          <span><strong>USD 187.400</strong> en oportunidades activas</span>
+          <span class="dot">·</span>
+          <span><strong>50 leads</strong> distribuidos</span>
+          <span class="dot">·</span>
+          <span>ritmo del mes <strong>+12%</strong></span>
+        </div>
+      </div>
+
+      <!-- Filtros por comercial -->
+      <div class="filters">
+        <span class="filter-label">Filtrar</span>
+        <button class="filter-chip all">Todos · 50</button>
+        <button class="filter-chip">
+          <span class="filter-avatar av-ml">ML</span>
+          Mariana
+        </button>
+        <button class="filter-chip">
+          <span class="filter-avatar av-dt">DT</span>
+          Diego
+        </button>
+        <button class="filter-chip">
+          <span class="filter-avatar av-sm">SM</span>
+          Sofía
+        </button>
+        <button class="filter-chip">
+          <span class="filter-avatar av-na">?</span>
+          Sin asignar
+        </button>
+      </div>
+    </div>
+
+    <!-- Board del kanban -->
+    <div class="board">
+
+      <!-- COLUMNA: NUEVOS -->
+      <div class="column" data-state="nuevos">
+        <div class="col-header">
+          <div class="col-top">
+            <span class="col-name">Nuevos</span>
+            <span class="col-count">6</span>
+          </div>
+          <div class="col-value">USD 17.200</div>
+          <div class="col-value-sub">Ingresan hace menos de 7 días</div>
+        </div>
+
+        <div class="col-body">
+          <div class="card">
+            <div class="card-head">
+              <div class="card-title-block">
+                <div class="card-title">Inmobiliaria Faro</div>
+                <div class="card-meta">
+                  <span class="heat-dot cool"></span>
+                  <span class="card-source-tag">Formulario</span>
+                </div>
+              </div>
+            </div>
+            <div>
+              <div class="card-value">USD 5.800</div>
+              <div class="card-value-sub">Recurrente</div>
+            </div>
+            <div class="card-foot">
+              <div class="card-owner">
+                <span class="card-owner-avatar av-sm">SM</span>
+                Sofía
+              </div>
+              <div class="card-time">
+                <span class="card-time-dot"></span>
+                2d acá
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <div class="card-title-block">
+                <div class="card-title">Agencia Mercurio</div>
+                <div class="card-meta">
+                  <span class="heat-dot cool"></span>
+                  <span class="card-source-tag">Formulario</span>
+                </div>
+              </div>
+            </div>
+            <div>
+              <div class="card-value">USD 5.400</div>
+              <div class="card-value-sub">Proyecto</div>
+            </div>
+            <div class="card-foot">
+              <div class="card-owner">
+                <span class="card-owner-avatar av-na">?</span>
+                Sin asignar
+              </div>
+              <div class="card-time">
+                <span class="card-time-dot"></span>
+                4d acá
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <div class="card-title-block">
+                <div class="card-title">Bar La Castellana</div>
+                <div class="card-meta">
+                  <span class="heat-dot cool"></span>
+                  <span class="card-source-tag">Referido</span>
+                </div>
+              </div>
+            </div>
+            <div>
+              <div class="card-value">USD 2.400</div>
+              <div class="card-value-sub">Proyecto</div>
+            </div>
+            <div class="card-foot">
+              <div class="card-owner">
+                <span class="card-owner-avatar av-dt">DT</span>
+                Diego
+              </div>
+              <div class="card-time">
+                <span class="card-time-dot"></span>
+                1d acá
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <div class="card-title-block">
+                <div class="card-title">Consultora Andrade</div>
+                <div class="card-meta">
+                  <span class="heat-dot cool"></span>
+                  <span class="card-source-tag">LinkedIn</span>
+                </div>
+              </div>
+            </div>
+            <div>
+              <div class="card-value">USD 3.600</div>
+              <div class="card-value-sub">Recurrente</div>
+            </div>
+            <div class="card-foot">
+              <div class="card-owner">
+                <span class="card-owner-avatar av-ml">ML</span>
+                Mariana
+              </div>
+              <div class="card-time">
+                <span class="card-time-dot"></span>
+                5d acá
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- COLUMNA: EN CONVERSACIÓN -->
+      <div class="column" data-state="conversacion">
+        <div class="col-header">
+          <div class="col-top">
+            <span class="col-name">En conversación</span>
+            <span class="col-count">8</span>
+          </div>
+          <div class="col-value">USD 47.400</div>
+          <div class="col-value-sub">Primer contacto hecho</div>
+        </div>
+
+        <div class="col-body">
+          <div class="card">
+            <div class="card-head">
+              <div class="card-title-block">
+                <div class="card-title">Estudio Vázquez & Asoc.</div>
+                <div class="card-meta">
+                  <span class="heat-dot med"></span>
+                  <span class="card-source-tag">Referido</span>
+                </div>
+              </div>
+            </div>
+            <div>
+              <div class="card-value">USD 3.200</div>
+              <div class="card-value-sub">Recurrente · 12 m</div>
+            </div>
+            <div class="card-foot">
+              <div class="card-owner">
+                <span class="card-owner-avatar av-ml">ML</span>
+                Mariana
+              </div>
+              <div class="card-time">
+                <span class="card-time-dot"></span>
+                9d acá
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <div class="card-title-block">
+                <div class="card-title">Distribuidora Centro</div>
+                <div class="card-meta">
+                  <span class="heat-dot med"></span>
+                  <span class="card-source-tag">WhatsApp</span>
+                </div>
+              </div>
+            </div>
+            <div>
+              <div class="card-value">USD 3.800</div>
+              <div class="card-value-sub">Recurrente</div>
+            </div>
+            <div class="card-foot">
+              <div class="card-owner">
+                <span class="card-owner-avatar av-dt">DT</span>
+                Diego
+              </div>
+              <div class="card-time stuck">
+                <span class="card-time-dot"></span>
+                16d acá
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <div class="card-title-block">
+                <div class="card-title">Don Eduardo</div>
+                <div class="card-meta">
+                  <span class="heat-dot med"></span>
+                  <span class="card-source-tag">WhatsApp</span>
+                </div>
+              </div>
+            </div>
+            <div>
+              <div class="card-value">USD 2.100</div>
+              <div class="card-value-sub">Recurrente</div>
+            </div>
+            <div class="card-foot">
+              <div class="card-owner">
+                <span class="card-owner-avatar av-ml">ML</span>
+                Mariana
+              </div>
+              <div class="card-time">
+                <span class="card-time-dot"></span>
+                5d acá
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <div class="card-title-block">
+                <div class="card-title">Mariella Eventos</div>
+                <div class="card-meta">
+                  <span class="heat-dot med"></span>
+                  <span class="card-source-tag">Referido</span>
+                </div>
+              </div>
+            </div>
+            <div>
+              <div class="card-value">USD 6.300</div>
+              <div class="card-value-sub">Proyecto</div>
+            </div>
+            <div class="card-foot">
+              <div class="card-owner">
+                <span class="card-owner-avatar av-sm">SM</span>
+                Sofía
+              </div>
+              <div class="card-time">
+                <span class="card-time-dot"></span>
+                7d acá
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- COLUMNA: PROPUESTA -->
+      <div class="column" data-state="propuesta">
+        <div class="col-header">
+          <div class="col-top">
+            <span class="col-name">Propuesta</span>
+            <span class="col-count">7</span>
+          </div>
+          <div class="col-value">USD 76.400</div>
+          <div class="col-value-sub">Cotización enviada</div>
+        </div>
+
+        <!-- AI hint: leads atascados -->
+        <div class="col-hint">
+          <svg class="col-hint-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01"/><circle cx="12" cy="12" r="10"/></svg>
+          2 atascados hace +14 días
+        </div>
+
+        <div class="col-body">
+          <div class="card">
+            <div class="card-head">
+              <div class="card-title-block">
+                <div class="card-title">Constructora Litoral</div>
+                <div class="card-meta">
+                  <span class="heat-dot warm"></span>
+                  <span class="card-source-tag">Referido</span>
+                </div>
+              </div>
+            </div>
+            <div>
+              <div class="card-value">USD 9.400</div>
+              <div class="card-value-sub">Proyecto</div>
+            </div>
+            <div class="card-foot">
+              <div class="card-owner">
+                <span class="card-owner-avatar av-dt">DT</span>
+                Diego
+              </div>
+              <div class="card-time stuck">
+                <span class="card-time-dot"></span>
+                18d acá
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <div class="card-title-block">
+                <div class="card-title">Clínica Norte</div>
+                <div class="card-meta">
+                  <span class="heat-dot warm"></span>
+                  <span class="card-source-tag">LinkedIn</span>
+                </div>
+              </div>
+            </div>
+            <div>
+              <div class="card-value">USD 7.500</div>
+              <div class="card-value-sub">Proyecto</div>
+            </div>
+            <div class="card-foot">
+              <div class="card-owner">
+                <span class="card-owner-avatar av-dt">DT</span>
+                Diego
+              </div>
+              <div class="card-time">
+                <span class="card-time-dot"></span>
+                11d acá
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <div class="card-title-block">
+                <div class="card-title">Hostería Patagonia</div>
+                <div class="card-meta">
+                  <span class="heat-dot warm"></span>
+                  <span class="card-source-tag">Formulario</span>
+                </div>
+              </div>
+            </div>
+            <div>
+              <div class="card-value">USD 8.200</div>
+              <div class="card-value-sub">Proyecto</div>
+            </div>
+            <div class="card-foot">
+              <div class="card-owner">
+                <span class="card-owner-avatar av-sm">SM</span>
+                Sofía
+              </div>
+              <div class="card-time stuck">
+                <span class="card-time-dot"></span>
+                15d acá
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <div class="card-title-block">
+                <div class="card-title">Polo Logístico Sur</div>
+                <div class="card-meta">
+                  <span class="heat-dot warm"></span>
+                  <span class="card-source-tag">LinkedIn</span>
+                </div>
+              </div>
+            </div>
+            <div>
+              <div class="card-value">USD 12.300</div>
+              <div class="card-value-sub">Recurrente · 24 m</div>
+            </div>
+            <div class="card-foot">
+              <div class="card-owner">
+                <span class="card-owner-avatar av-ml">ML</span>
+                Mariana
+              </div>
+              <div class="card-time">
+                <span class="card-time-dot"></span>
+                9d acá
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- COLUMNA: CIERRE (con una card siendo arrastrada) -->
+      <div class="column" data-state="cierre">
+        <div class="col-header">
+          <div class="col-top">
+            <span class="col-name">Cierre</span>
+            <span class="col-count">4</span>
+          </div>
+          <div class="col-value">USD 36.600</div>
+          <div class="col-value-sub">Esperando definición</div>
+        </div>
+
+        <div class="col-body">
+          <div class="card dragging">
+            <div class="card-head">
+              <div class="card-title-block">
+                <div class="card-title">Constructora Aliaga</div>
+                <div class="card-meta">
+                  <span class="heat-dot hot"></span>
+                  <span class="card-source-tag">Formulario</span>
+                </div>
+              </div>
+            </div>
+            <div>
+              <div class="card-value">USD 4.800</div>
+              <div class="card-value-sub">Recurrente · 6 m</div>
+            </div>
+            <div class="card-foot">
+              <div class="card-owner">
+                <span class="card-owner-avatar av-ml">ML</span>
+                Mariana
+              </div>
+              <div class="card-time">
+                <span class="card-time-dot"></span>
+                3d acá
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <div class="card-title-block">
+                <div class="card-title">Centro Médico Sur</div>
+                <div class="card-meta">
+                  <span class="heat-dot warm"></span>
+                  <span class="card-source-tag">Referido</span>
+                </div>
+              </div>
+            </div>
+            <div>
+              <div class="card-value">USD 11.500</div>
+              <div class="card-value-sub">Proyecto</div>
+            </div>
+            <div class="card-foot">
+              <div class="card-owner">
+                <span class="card-owner-avatar av-dt">DT</span>
+                Diego
+              </div>
+              <div class="card-time">
+                <span class="card-time-dot"></span>
+                6d acá
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <div class="card-title-block">
+                <div class="card-title">Bodega del Valle</div>
+                <div class="card-meta">
+                  <span class="heat-dot warm"></span>
+                  <span class="card-source-tag">Formulario</span>
+                </div>
+              </div>
+            </div>
+            <div>
+              <div class="card-value">USD 14.700</div>
+              <div class="card-value-sub">Recurrente · 12 m</div>
+            </div>
+            <div class="card-foot">
+              <div class="card-owner">
+                <span class="card-owner-avatar av-sm">SM</span>
+                Sofía
+              </div>
+              <div class="card-time">
+                <span class="card-time-dot"></span>
+                4d acá
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- COLUMNA: GANADOS (vitrina con glow) -->
+      <div class="column" data-state="ganados">
+        <div class="col-header">
+          <div class="col-top">
+            <span class="col-name">Ganados</span>
+            <span class="col-count">3</span>
+          </div>
+          <div class="col-value">USD 9.800</div>
+          <div class="col-value-sub">Cerrados este mes</div>
+        </div>
+
+        <div class="col-body">
+          <div class="card">
+            <div class="card-head">
+              <div class="card-title-block">
+                <div class="card-title">Café Belén</div>
+                <div class="card-meta">
+                  <span class="heat-dot won"></span>
+                  <span class="card-source-tag">WhatsApp</span>
+                </div>
+              </div>
+            </div>
+            <div>
+              <div class="card-value">USD 2.800</div>
+              <div class="card-value-sub">Recurrente · 12 m</div>
+            </div>
+            <div class="card-foot">
+              <div class="card-owner">
+                <span class="card-owner-avatar av-ml">ML</span>
+                Mariana
+              </div>
+              <div class="card-time">
+                <span class="card-time-dot"></span>
+                ganado el 20/may
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <div class="card-title-block">
+                <div class="card-title">Dr. Saldívar</div>
+                <div class="card-meta">
+                  <span class="heat-dot won"></span>
+                  <span class="card-source-tag">Referido</span>
+                </div>
+              </div>
+            </div>
+            <div>
+              <div class="card-value">USD 3.500</div>
+              <div class="card-value-sub">Proyecto</div>
+            </div>
+            <div class="card-foot">
+              <div class="card-owner">
+                <span class="card-owner-avatar av-dt">DT</span>
+                Diego
+              </div>
+              <div class="card-time">
+                <span class="card-time-dot"></span>
+                ganado el 14/may
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <div class="card-title-block">
+                <div class="card-title">Espacio Pilar</div>
+                <div class="card-meta">
+                  <span class="heat-dot won"></span>
+                  <span class="card-source-tag">LinkedIn</span>
+                </div>
+              </div>
+            </div>
+            <div>
+              <div class="card-value">USD 3.500</div>
+              <div class="card-value-sub">Recurrente · 6 m</div>
+            </div>
+            <div class="card-foot">
+              <div class="card-owner">
+                <span class="card-owner-avatar av-sm">SM</span>
+                Sofía
+              </div>
+              <div class="card-time">
+                <span class="card-time-dot"></span>
+                ganado el 8/may
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+</div>
+
+<script>
+  const sidebar = document.querySelector('.sidebar');
+  const backdrop = document.getElementById('backdrop');
+  const openSidebarBtn = document.getElementById('open-sidebar');
+
+  function closeAll() {
+    sidebar.classList.remove('open');
+    backdrop.classList.remove('active');
+  }
+  function openSidebar() {
+    sidebar.classList.add('open');
+    backdrop.classList.add('active');
+  }
+
+  openSidebarBtn?.addEventListener('click', openSidebar);
+  backdrop?.addEventListener('click', closeAll);
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeAll();
+  });
+</script>
+
+</body>
+</html>

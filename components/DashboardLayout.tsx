@@ -9,8 +9,14 @@ interface DashboardLayoutProps {
   agendaEvents: EventoAgenda[];
   sidebarCounts?: SidebarCounts;
   cierreMes?: React.ComponentProps<typeof AgendaPanel>["cierreMes"];
+  // Override del className del <main>. Útil para pantallas como el kanban
+  // que necesitan controlar el padding lateral (board con scroll horizontal).
+  mainClassName?: string;
   children: React.ReactNode;
 }
+
+const DEFAULT_MAIN =
+  "px-4 py-5 md:px-6 md:py-7 lg:px-8 lg:py-7 pb-16 min-w-0";
 
 // Shell del tablero. Server Component que sólo envuelve la árbol en el
 // DrawerProvider (Client) y arma el grid principal.
@@ -18,6 +24,7 @@ export function DashboardLayout({
   agendaEvents,
   sidebarCounts,
   cierreMes,
+  mainClassName = DEFAULT_MAIN,
   children,
 }: DashboardLayoutProps) {
   return (
@@ -26,9 +33,7 @@ export function DashboardLayout({
       <Backdrop />
       <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] xl:grid-cols-[220px_1fr_280px] min-h-screen">
         <SidebarLeft counts={sidebarCounts} />
-        <main className="px-4 py-5 md:px-6 md:py-7 lg:px-8 lg:py-7 pb-16 min-w-0">
-          {children}
-        </main>
+        <main className={mainClassName}>{children}</main>
         <AgendaPanel events={agendaEvents} cierreMes={cierreMes} />
       </div>
     </DrawerProvider>

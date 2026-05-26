@@ -3,11 +3,13 @@
 
 import { createClient } from "@/lib/supabase/server";
 import type {
+  Comercial,
   Contacto,
   EventoAgenda,
   Lead,
   LeadDetalle,
   LeadFrio,
+  LeadKanban,
   OportunidadDia,
   PatronIa,
   PipelineEstado,
@@ -74,6 +76,8 @@ export async function getLeadConDetalle(
       .from("contactos")
       .select("*")
       .eq("lead_id", id)
+      // Cambios de estado del kanban no se muestran en el historial visible.
+      .neq("canal", "cambio_estado")
       .order("fecha", { ascending: false }),
     supabase
       .from("agenda")
@@ -94,6 +98,30 @@ export async function getLeadConDetalle(
     contactos: (contactosRes.data ?? []) as Contacto[],
     agendaRelacionada: (agendaRes.data ?? []) as EventoAgenda[],
   };
+}
+
+// Todos los leads para el kanban: lead + comercial + dias_en_estado.
+// Ordenamos por fecha_creacion desc para que las cards más nuevas queden arriba
+// dentro de cada columna.
+export async function getLeadsParaKanban(): Promise<LeadKanban[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("v_leads_kanban")
+    .select("*")
+    .order("fecha_creacion", { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as LeadKanban[];
+}
+
+// Lista completa de comerciales (para el filtro del kanban).
+export async function getComerciales(): Promise<Comercial[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("comerciales")
+    .select("*")
+    .order("nombre", { ascending: true });
+  if (error) throw error;
+  return (data ?? []) as Comercial[];
 }
 
 // El primer patrón detectado (la vista devuelve 0 o 1 fila gracias al HAVING).

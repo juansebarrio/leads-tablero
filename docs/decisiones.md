@@ -88,6 +88,39 @@
 
 ---
 
+## 2026-05-26 · Kanban con @dnd-kit + framer-motion
+
+**Decisión:** Para la vista `/pipeline` (kanban con drag & drop) usamos `@dnd-kit` para DnD y `framer-motion` para animaciones (counter, drop spring, stagger).
+
+**Razón:**
+- `@dnd-kit` tiene buen soporte mobile/touch nativo, accesibilidad (teclado), API moderna basada en hooks y un `<DragOverlay>` que evita reparents del DOM al arrastrar.
+- `framer-motion` permite animar layout entre columnas con `layout` automático, counters con `useMotionValue` + `useTransform`, y `AnimatePresence` para enter/exit.
+- Alternativas evaluadas: `react-beautiful-dnd` (deprecado), `react-dnd` (más bajo nivel y sin DragOverlay listo), CSS-only (no resuelve mobile bien).
+
+**Implicancias:**
+- Las cards y columnas viven en `components/pipeline/` y son todas Client (necesitan hooks de DnD y motion).
+- El cambio de estado se persiste con un server action `cambiarEstado()` + insert de un contacto con `canal='cambio_estado'` (ver decisión de schema abajo).
+- Optimistic UI con rollback si falla el server action.
+- Para touch en mobile: `TouchSensor` con `activationConstraint: { delay: 250, tolerance: 5 }` para no chocar con el scroll horizontal del board.
+
+---
+
+## 2026-05-26 · Cambios de estado registrados como contactos
+
+**Decisión:** Cuando un lead cambia de estado en el kanban, en vez de sumar columnas a `leads`, insertamos un contacto con `canal='cambio_estado'` y `metadata={ from, to }`.
+
+**Razón:**
+- Nos da historial completo de movimientos del pipeline sin schema extra.
+- Permite calcular "días atascado en este estado" como `now() - MAX(fecha)` de ese tipo de contacto.
+- Reusa la tabla existente — el trigger de `fecha_ultimo_contacto` no se ve afectado porque ese campo refleja "último contacto con el cliente", y un cambio interno de estado no lo es.
+
+**Implicancias:**
+- Nueva migration: amplía el CHECK de `contactos.canal` para aceptar `cambio_estado`, suma columna `metadata jsonb DEFAULT '{}'::jsonb`.
+- Nueva view `v_leads_kanban` que precalcula `dias_en_estado` (desde el último cambio de estado, o desde `fecha_creacion` si nunca cambió).
+- En la timeline de la ficha del lead, los contactos con `canal='cambio_estado'` se **filtran** (no se muestran como ítem de historial). Si en el futuro queremos mostrarlos como sub-items visuales diferentes, queda la `metadata` para renderizar "De propuesta a cierre".
+
+---
+
 ## Cuando agregues una decisión nueva
 
 Plantilla:

@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  BarChart3,
   Calendar,
   CheckCircle2,
   Clock,
@@ -13,12 +14,15 @@ import {
   Users,
   type LucideIcon,
 } from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Nucleus } from "@/components/Nucleus";
 import { useDrawers } from "@/components/drawer-context";
 
 export type SidebarCounts = {
   atenderHoy?: number;
   agenda?: number;
+  pipeline?: number; // total de leads del pipeline
   nuevos?: number;
   conversacion?: number;
   propuesta?: number;
@@ -35,11 +39,12 @@ type NavItem = {
   icon: LucideIcon;
   count?: number | null;
   alert?: boolean;
-  active?: boolean;
+  href?: string;
 };
 
 export function SidebarLeft({ counts = {} }: SidebarLeftProps) {
   const { sidebarOpen, closeAll } = useDrawers();
+  const pathname = usePathname();
 
   const hoy: NavItem[] = [
     {
@@ -47,12 +52,18 @@ export function SidebarLeft({ counts = {} }: SidebarLeftProps) {
       icon: Target,
       count: counts.atenderHoy ?? 0,
       alert: true,
-      active: true,
+      href: "/",
     },
     { label: "Agenda", icon: Calendar, count: counts.agenda ?? 0 },
   ];
 
   const pipeline: NavItem[] = [
+    {
+      label: "Pipeline",
+      icon: BarChart3,
+      count: counts.pipeline,
+      href: "/pipeline",
+    },
     { label: "Leads nuevos", icon: Clock, count: counts.nuevos ?? 0 },
     {
       label: "En conversación",
@@ -110,11 +121,22 @@ export function SidebarLeft({ counts = {} }: SidebarLeftProps) {
         </span>
       </div>
 
-      <NavSection title="Hoy" items={hoy} onItemClick={closeAll} />
-      <NavSection title="Pipeline" items={pipeline} onItemClick={closeAll} />
+      <NavSection
+        title="Hoy"
+        items={hoy}
+        pathname={pathname}
+        onItemClick={closeAll}
+      />
+      <NavSection
+        title="Pipeline"
+        items={pipeline}
+        pathname={pathname}
+        onItemClick={closeAll}
+      />
       <NavSection
         title="Inteligencia"
         items={inteligencia}
+        pathname={pathname}
         onItemClick={closeAll}
       />
 
@@ -140,10 +162,12 @@ export function SidebarLeft({ counts = {} }: SidebarLeftProps) {
 function NavSection({
   title,
   items,
+  pathname,
   onItemClick,
 }: {
   title: string;
   items: NavItem[];
+  pathname: string;
   onItemClick: () => void;
 }) {
   return (
@@ -153,31 +177,20 @@ function NavSection({
       </div>
       {items.map((item) => {
         const Icon = item.icon;
-        return (
-          <button
-            type="button"
-            key={item.label}
-            onClick={onItemClick}
-            className={`
-              w-full flex items-center gap-2.5 px-2 py-1.5 my-px rounded-md text-[12.5px] cursor-pointer transition
-              ${
-                item.active
-                  ? "bg-ink text-white"
-                  : "text-ink-2 hover:bg-line-2"
-              }
-            `}
-          >
+        const isActive = item.href !== undefined && pathname === item.href;
+        const content = (
+          <>
             <Icon
-              className={`w-3.5 h-3.5 shrink-0 ${item.active ? "text-white" : "text-muted"}`}
+              className={`w-3.5 h-3.5 shrink-0 ${isActive ? "text-white" : "text-muted"}`}
               strokeWidth={2}
             />
-            <span className="text-left">{item.label}</span>
+            <span className="text-left flex-1">{item.label}</span>
             {item.count !== undefined && (
               <span
                 className={`
-                  ml-auto text-[10.5px] px-1.5 py-px rounded-full font-medium
+                  text-[10.5px] px-1.5 py-px rounded-full font-medium
                   ${
-                    item.active
+                    isActive
                       ? "bg-white/15 text-white"
                       : item.alert
                         ? "bg-rojo-soft text-rojo"
@@ -188,6 +201,32 @@ function NavSection({
                 {item.count === null ? "—" : item.count}
               </span>
             )}
+          </>
+        );
+        const className = `
+          w-full flex items-center gap-2.5 px-2 py-1.5 my-px rounded-md text-[12.5px] cursor-pointer transition
+          ${isActive ? "bg-ink text-white" : "text-ink-2 hover:bg-line-2"}
+        `;
+        if (item.href) {
+          return (
+            <Link
+              key={item.label}
+              href={item.href}
+              onClick={onItemClick}
+              className={className}
+            >
+              {content}
+            </Link>
+          );
+        }
+        return (
+          <button
+            type="button"
+            key={item.label}
+            onClick={onItemClick}
+            className={className}
+          >
+            {content}
           </button>
         );
       })}
