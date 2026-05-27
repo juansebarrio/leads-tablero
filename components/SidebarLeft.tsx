@@ -27,6 +27,9 @@ export type SidebarCounts = {
   conversacion?: number;
   propuesta?: number;
   ganados?: number | null; // null muestra "—"
+  // Cantidad de leads cerrados del mes (ganados + perdidos). Usado por
+  // el item "Cerrados" del sidebar. Si no se pasa, cae a `ganados`.
+  cerrados?: number;
   patrones?: number;
 };
 
@@ -85,7 +88,13 @@ export function SidebarLeft({ counts = {}, currentUser }: SidebarLeftProps) {
     {
       label: "Cerrados",
       icon: CheckCircle2,
-      count: counts.ganados === null ? null : counts.ganados ?? 0,
+      count:
+        counts.cerrados !== undefined
+          ? counts.cerrados
+          : counts.ganados === null
+            ? null
+            : counts.ganados ?? 0,
+      href: "/cerrados",
     },
   ];
 

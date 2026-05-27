@@ -31,6 +31,7 @@ function revalidateLead(leadId: string) {
   revalidatePath("/");
   revalidatePath("/pipeline");
   revalidatePath("/equipo");
+  revalidatePath("/cerrados");
   revalidatePath(`/lead/${leadId}`);
 }
 

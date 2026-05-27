@@ -1,0 +1,1090 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>JS80 · Cerrados</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F7F6F2;
+    --panel: #FFFFFF;
+    --panel-2: #FBFAF6;
+    --ink: #0E0E12;
+    --ink-2: #2A2A33;
+    --muted: #6B6B75;
+    --muted-2: #9A9AA3;
+    --line: #E8E6DE;
+    --line-2: #F0EEE6;
+    --azul: #6B8CFF;
+    --azul-soft: #EDF1FF;
+    --violeta: #8B6FFF;
+    --violeta-soft: #F1ECFF;
+    --turquesa: #5DC7E0;
+    --coral: #FF8AA0;
+    --rojo: #C8362E;
+    --rojo-soft: #FBEAE7;
+    --amarillo: #B8860B;
+    --amarillo-soft: #FBF3DB;
+    --verde: #3E8A5A;
+    --verde-soft: #E6F1EB;
+    --oro: #C9A227;
+    --plata: #8B92A3;
+    --bronce: #A0673A;
+    --display: 'Fraunces', Georgia, serif;
+    --body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    font-family: var(--body);
+    color: var(--ink);
+    background: var(--bg);
+    font-size: 13px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  svg { display: block; }
+
+  .app {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    min-height: 100vh;
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    background: var(--panel);
+    border-right: 1px solid var(--line);
+    padding: 22px 18px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+  }
+  .brand-block { display: flex; align-items: center; gap: 10px; padding-bottom: 18px; border-bottom: 1px solid var(--line); }
+  .nucleus {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    background: conic-gradient(from 200deg, #FF8AA0 0deg, #FFB088 60deg, #6B8CFF 160deg, #8B6FFF 230deg, #5DC7E0 310deg, #FF8AA0 360deg);
+    flex-shrink: 0;
+  }
+  .brand-name { font-family: var(--display); font-weight: 600; font-size: 17px; letter-spacing: -0.01em; line-height: 1; }
+  .brand-sub { font-size: 10.5px; color: var(--muted); margin-top: 3px; }
+  .nav-title { font-size: 10.5px; font-weight: 600; color: var(--muted-2); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 6px; padding: 0 6px; }
+  .nav-item { display: flex; align-items: center; gap: 9px; padding: 6px 8px; margin: 1px 0; border-radius: 6px; font-size: 12.5px; color: var(--ink-2); cursor: pointer; }
+  .nav-item .nav-icon { width: 14px; height: 14px; color: var(--muted); flex-shrink: 0; }
+  .nav-item:hover { background: var(--line-2); }
+  .nav-item.active { background: var(--ink); color: white; font-weight: 500; }
+  .nav-item.active .nav-icon { color: white; }
+  .nav-item.active .nav-count { background: rgba(255,255,255,0.16); color: white; }
+  .nav-count { margin-left: auto; font-size: 10.5px; background: var(--line-2); color: var(--muted); padding: 1px 6px; border-radius: 999px; font-weight: 500; }
+  .nav-count.alert { background: var(--rojo-soft); color: var(--rojo); }
+  .sidebar-foot { margin-top: auto; padding-top: 14px; border-top: 1px solid var(--line); display: flex; align-items: center; gap: 10px; }
+  .user-mini-avatar { width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #8B6FFF, #5DC7E0); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 11px; }
+  .user-mini-name { font-weight: 600; color: var(--ink); font-size: 12px; }
+  .user-mini-role { color: var(--muted); font-size: 10.5px; }
+
+  /* MAIN */
+  .main { padding: 28px 32px 60px; min-width: 0; }
+
+  /* HEADER */
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 28px;
+    gap: 24px;
+  }
+  .page-eyebrow {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .page-title {
+    font-family: var(--display);
+    font-weight: 500;
+    font-variation-settings: "SOFT" 100, "opsz" 144;
+    font-size: 36px;
+    line-height: 1.05;
+    letter-spacing: -0.025em;
+    color: var(--ink);
+    margin-bottom: 10px;
+  }
+  .page-title em {
+    font-style: italic;
+    color: var(--verde);
+    font-weight: 500;
+  }
+  .page-sub {
+    font-size: 13.5px;
+    color: var(--muted);
+  }
+  .page-sub strong { color: var(--ink); font-weight: 600; }
+
+  /* Selector de período */
+  .period-selector {
+    display: flex;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 4px;
+    gap: 2px;
+    flex-shrink: 0;
+  }
+  .period-option {
+    background: transparent;
+    border: none;
+    padding: 8px 14px;
+    font-family: var(--body);
+    font-size: 12.5px;
+    color: var(--muted);
+    font-weight: 500;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  .period-option:hover { color: var(--ink); }
+  .period-option.active {
+    background: var(--ink);
+    color: white;
+  }
+
+  /* BANDA DE KPIs */
+  .kpi-strip {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+  .kpi-card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 20px 22px;
+    position: relative;
+    overflow: hidden;
+  }
+  .kpi-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 22px;
+    right: 22px;
+    height: 3px;
+    border-radius: 0 0 3px 3px;
+  }
+  .kpi-card.ganados::before { background: var(--verde); }
+  .kpi-card.valor::before { background: linear-gradient(90deg, var(--verde), var(--azul)); }
+  .kpi-card.perdidos::before { background: var(--rojo); }
+  .kpi-card.ratio::before { background: var(--violeta); }
+  .kpi-label {
+    font-size: 10.5px;
+    color: var(--muted);
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .kpi-value {
+    font-family: var(--display);
+    font-weight: 600;
+    font-variation-settings: "opsz" 144;
+    font-size: 28px;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    color: var(--ink);
+    margin-bottom: 8px;
+  }
+  .kpi-card.ganados .kpi-value { color: var(--verde); }
+  .kpi-card.perdidos .kpi-value { color: var(--rojo); }
+  .kpi-delta {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11.5px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 999px;
+  }
+  .kpi-delta.up { background: var(--verde-soft); color: var(--verde); }
+  .kpi-delta.down { background: var(--rojo-soft); color: var(--rojo); }
+  .kpi-delta.neutral { background: var(--line-2); color: var(--muted); }
+  .kpi-sub {
+    font-size: 11.5px;
+    color: var(--muted);
+    margin-left: 6px;
+  }
+
+  /* SECCIÓN */
+  .section {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+  .section-header {
+    padding: 22px 26px;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 14px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .section-header:hover { background: var(--panel-2); }
+  .section-title-block {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+  .section-title {
+    font-family: var(--display);
+    font-weight: 500;
+    font-variation-settings: "SOFT" 100, "opsz" 144;
+    font-size: 22px;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    line-height: 1;
+  }
+  .section-title em.verde { font-style: italic; color: var(--verde); font-weight: 500; }
+  .section-title em.rojo { font-style: italic; color: var(--rojo); font-weight: 500; }
+  .section-count {
+    font-size: 11.5px;
+    color: var(--muted);
+    font-weight: 500;
+  }
+  .section-toggle {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .section-summary {
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .section-summary strong { color: var(--ink); font-weight: 600; }
+  .toggle-icon {
+    color: var(--muted);
+    transition: transform 0.2s;
+  }
+  .section.expanded .toggle-icon { transform: rotate(180deg); }
+
+  .section-body {
+    padding: 0 26px 24px;
+    border-top: 1px solid var(--line-2);
+    display: none;
+  }
+  .section.expanded .section-body { display: block; }
+
+  /* RANKING DE COMERCIALES (dentro de "Lo ganado") */
+  .ranking {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    padding: 20px 0 16px;
+  }
+  .rank-card {
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 18px 18px 16px;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .rank-card.gold {
+    background: linear-gradient(180deg, #FBF6E8 0%, #F5EDD3 100%);
+    border-color: #E8D593;
+  }
+  .rank-card.silver {
+    background: linear-gradient(180deg, #F5F6F8 0%, #EBEDF1 100%);
+    border-color: #C8CCD3;
+  }
+  .rank-card.bronze {
+    background: linear-gradient(180deg, #FAF1E8 0%, #F2E2CF 100%);
+    border-color: #DBB68C;
+  }
+  .rank-medal {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+    font-size: 13px;
+    font-family: var(--display);
+  }
+  .rank-medal.gold { background: var(--oro); }
+  .rank-medal.silver { background: var(--plata); }
+  .rank-medal.bronze { background: var(--bronce); }
+
+  .rank-comercial {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .rank-avatar {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: white;
+    font-size: 13px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .av-ml { background: linear-gradient(135deg, #8B6FFF, #5DC7E0); }
+  .av-dt { background: linear-gradient(135deg, #FF8AA0, #FFB088); }
+  .av-sm { background: linear-gradient(135deg, #6B8CFF, #8B6FFF); }
+  .rank-name {
+    font-family: var(--display);
+    font-weight: 500;
+    font-size: 15px;
+    color: var(--ink);
+    line-height: 1.1;
+    margin-bottom: 1px;
+  }
+  .rank-role {
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .rank-value {
+    font-family: var(--display);
+    font-weight: 600;
+    font-variation-settings: "opsz" 144;
+    font-size: 22px;
+    letter-spacing: -0.015em;
+    color: var(--ink);
+    line-height: 1;
+  }
+  .rank-meta {
+    font-size: 11.5px;
+    color: var(--muted);
+  }
+  .rank-meta strong { color: var(--ink-2); font-weight: 600; }
+
+  /* LISTA DE LEADS (ganados/perdidos) */
+  .leads-table {
+    border-top: 1px solid var(--line-2);
+    margin-top: 8px;
+  }
+  .lead-row {
+    display: grid;
+    grid-template-columns: 1fr auto auto auto auto;
+    gap: 16px;
+    align-items: center;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--line-2);
+  }
+  .lead-row:last-child { border-bottom: none; }
+  .lead-name-block { min-width: 0; }
+  .lead-name {
+    font-weight: 600;
+    color: var(--ink);
+    font-size: 13.5px;
+    margin-bottom: 3px;
+  }
+  .lead-meta {
+    font-size: 11.5px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .lead-meta-dot {
+    width: 3px; height: 3px;
+    border-radius: 50%;
+    background: var(--muted-2);
+  }
+  .lead-tag {
+    background: var(--line-2);
+    color: var(--ink-2);
+    padding: 1px 7px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .lead-tag.precio { background: #FCE0DD; color: #9B2B23; }
+  .lead-tag.timing { background: var(--amarillo-soft); color: var(--amarillo); }
+  .lead-tag.competencia { background: #E6E8FF; color: #4B5BAB; }
+  .lead-tag.no-respondio { background: #ECEDF1; color: #5C6271; }
+  .lead-tag.cambio { background: var(--violeta-soft); color: var(--violeta); }
+  .lead-tag.otro { background: var(--line-2); color: var(--muted); }
+
+  .lead-days {
+    font-size: 11.5px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .lead-value {
+    font-family: var(--display);
+    font-weight: 600;
+    font-variation-settings: "opsz" 144;
+    font-size: 15px;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    white-space: nowrap;
+    text-align: right;
+  }
+  .lead-value.lost { color: var(--rojo); }
+  .lead-avatar {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: white;
+    font-size: 9px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .lead-action {
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 11.5px;
+    font-weight: 500;
+  }
+  .lead-action:hover { color: var(--violeta); }
+
+  /* MOTIVOS DE PÉRDIDA */
+  .motivos-strip {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    padding: 20px 0 16px;
+  }
+  .motivo-card {
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 16px 18px;
+  }
+  .motivo-rank {
+    font-family: var(--display);
+    font-weight: 600;
+    font-variation-settings: "opsz" 144;
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .motivo-label {
+    font-family: var(--display);
+    font-weight: 500;
+    font-size: 17px;
+    color: var(--ink);
+    letter-spacing: -0.01em;
+    margin-bottom: 8px;
+    line-height: 1.1;
+  }
+  .motivo-bar-track {
+    height: 5px;
+    background: var(--line);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 6px;
+  }
+  .motivo-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+  }
+  .motivo-bar-fill.precio { background: var(--rojo); }
+  .motivo-bar-fill.timing { background: var(--amarillo); }
+  .motivo-bar-fill.competencia { background: var(--azul); }
+  .motivo-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11.5px;
+    color: var(--muted);
+  }
+  .motivo-meta strong {
+    color: var(--ink);
+    font-family: var(--display);
+    font-weight: 600;
+  }
+
+  /* ============================================ */
+  /* RESPONSIVE                                    */
+  /* ============================================ */
+  .topbar-mobile {
+    display: none;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: var(--panel);
+    border-bottom: 1px solid var(--line);
+    padding: 12px 16px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .tb-brand { display: flex; align-items: center; gap: 8px; }
+  .tb-brand-name { font-family: var(--display); font-weight: 600; font-size: 15px; letter-spacing: -0.01em; }
+  .tb-btn {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    width: 38px; height: 38px;
+    border-radius: 6px;
+    display: inline-flex; align-items: center; justify-content: center;
+    color: var(--ink-2);
+    cursor: pointer;
+  }
+  .backdrop { display: none; position: fixed; inset: 0; background: rgba(14, 14, 18, 0.4); z-index: 60; }
+  .backdrop.active { display: block; }
+
+  @media (max-width: 1279px) {
+    .main { padding: 24px 24px 60px; }
+    .kpi-strip { gap: 10px; }
+    .kpi-card { padding: 18px; }
+    .kpi-value { font-size: 24px; }
+  }
+
+  @media (max-width: 1023px) {
+    .app { grid-template-columns: 1fr; }
+    .sidebar {
+      position: fixed; top: 0; left: 0;
+      width: 260px; height: 100vh; z-index: 70;
+      transform: translateX(-100%);
+      transition: transform 0.25s ease;
+      box-shadow: 8px 0 32px rgba(14,14,18,0.08);
+    }
+    .sidebar.open { transform: translateX(0); }
+    .topbar-mobile { display: flex; }
+    .main { padding: 22px 24px 60px; }
+    .page-header { flex-direction: column; align-items: flex-start; gap: 16px; }
+    .kpi-strip { grid-template-columns: 1fr 1fr; }
+    .ranking { grid-template-columns: 1fr; }
+    .motivos-strip { grid-template-columns: 1fr; }
+  }
+
+  @media (max-width: 767px) {
+    .main { padding: 16px 16px 60px; }
+    .page-title { font-size: 24px; }
+    .kpi-card { padding: 14px; }
+    .kpi-value { font-size: 20px; }
+    .section-header { padding: 18px 18px; flex-direction: column; align-items: flex-start; }
+    .section-toggle { width: 100%; justify-content: space-between; }
+    .section-body { padding: 0 18px 20px; }
+    .section-title { font-size: 18px; }
+    .lead-row {
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+    }
+    .lead-days, .lead-avatar, .lead-action { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar-mobile">
+  <button class="tb-btn" id="open-sidebar" aria-label="Abrir menú">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+  </button>
+  <div class="tb-brand">
+    <div class="nucleus" style="width:24px;height:24px"></div>
+    <span class="tb-brand-name">js80</span>
+  </div>
+  <button class="tb-btn" aria-label="Ver agenda">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+  </button>
+</header>
+
+<div class="backdrop" id="backdrop"></div>
+
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="brand-block">
+      <div class="nucleus"></div>
+      <div>
+        <div class="brand-name">js80</div>
+        <div class="brand-sub">Tablero de leads</div>
+      </div>
+    </div>
+
+    <div>
+      <div class="nav-title">Hoy</div>
+      <div class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 2v4M2 12h4M12 22v-4M22 12h-4"/></svg>
+        Atender hoy
+        <span class="nav-count alert">8</span>
+      </div>
+      <div class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+        Agenda
+        <span class="nav-count">4</span>
+      </div>
+    </div>
+
+    <div>
+      <div class="nav-title">Pipeline</div>
+      <div class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="6" height="18" rx="1"/><rect x="11" y="3" width="6" height="11" rx="1"/><rect x="19" y="3" width="2" height="14" rx="1"/></svg>
+        Pipeline
+      </div>
+      <div class="nav-item">Leads nuevos<span class="nav-count">6</span></div>
+      <div class="nav-item">En conversación<span class="nav-count">8</span></div>
+      <div class="nav-item">Propuestas<span class="nav-count">7</span></div>
+      <div class="nav-item active">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Cerrados
+        <span class="nav-count">14</span>
+      </div>
+    </div>
+
+    <div>
+      <div class="nav-title">Inteligencia</div>
+      <div class="nav-item">Patrones<span class="nav-count">2</span></div>
+      <div class="nav-item">Conversión</div>
+      <div class="nav-item">Equipo</div>
+    </div>
+
+    <div class="sidebar-foot">
+      <div class="user-mini-avatar">ML</div>
+      <div>
+        <div class="user-mini-name">Mariana López</div>
+        <div class="user-mini-role">Comercial</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- Header -->
+    <div class="page-header">
+      <div>
+        <div class="page-eyebrow">Cerrados · Mayo 2026</div>
+        <h1 class="page-title">Lo que <em>cerraste</em> este mes.</h1>
+        <div class="page-sub">
+          Resultados finales · 11 ganados, 3 perdidos · meta del mes <strong>USD 75.000</strong>
+        </div>
+      </div>
+      <div class="period-selector">
+        <button class="period-option">Este mes</button>
+        <button class="period-option active">Mayo</button>
+        <button class="period-option">Trimestre</button>
+      </div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="kpi-strip">
+      <div class="kpi-card ganados">
+        <div class="kpi-label">Ganados</div>
+        <div class="kpi-value">11</div>
+        <div>
+          <span class="kpi-delta up">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m18 15-6-6-6 6"/></svg>
+            +22%
+          </span>
+          <span class="kpi-sub">vs abril</span>
+        </div>
+      </div>
+      <div class="kpi-card valor">
+        <div class="kpi-label">Valor cerrado</div>
+        <div class="kpi-value">USD 76.400</div>
+        <div>
+          <span class="kpi-delta up">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m18 15-6-6-6 6"/></svg>
+            102% de meta
+          </span>
+        </div>
+      </div>
+      <div class="kpi-card perdidos">
+        <div class="kpi-label">Perdidos</div>
+        <div class="kpi-value">3</div>
+        <div>
+          <span class="kpi-delta neutral">
+            USD 18.200 caídos
+          </span>
+        </div>
+      </div>
+      <div class="kpi-card ratio">
+        <div class="kpi-label">Ratio cierre</div>
+        <div class="kpi-value">79%</div>
+        <div>
+          <span class="kpi-delta up">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m18 15-6-6-6 6"/></svg>
+            +12 pp
+          </span>
+          <span class="kpi-sub">cierre vs propuesta</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECCIÓN: LO GANADO (con ranking de comerciales) -->
+    <div class="section expanded">
+      <div class="section-header" data-toggle="ganado">
+        <div class="section-title-block">
+          <div class="section-title">Lo <em class="verde">ganado</em></div>
+          <span class="section-count">11 leads · USD 76.400</span>
+        </div>
+        <div class="section-toggle">
+          <span class="section-summary">Mejor cierre: <strong>Sofía con USD 28.500</strong></span>
+          <svg class="toggle-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+      </div>
+      <div class="section-body">
+
+        <!-- Ranking podio -->
+        <div class="ranking">
+          <div class="rank-card gold">
+            <div class="rank-medal gold">1</div>
+            <div class="rank-comercial">
+              <div class="rank-avatar av-sm">SM</div>
+              <div>
+                <div class="rank-name">Sofía Martínez</div>
+                <div class="rank-role">Comercial</div>
+              </div>
+            </div>
+            <div>
+              <div class="rank-value">USD 28.500</div>
+              <div class="rank-meta"><strong>4 leads</strong> · ratio 21%</div>
+            </div>
+          </div>
+          <div class="rank-card silver">
+            <div class="rank-medal silver">2</div>
+            <div class="rank-comercial">
+              <div class="rank-avatar av-ml">ML</div>
+              <div>
+                <div class="rank-name">Mariana López</div>
+                <div class="rank-role">Comercial</div>
+              </div>
+            </div>
+            <div>
+              <div class="rank-value">USD 26.900</div>
+              <div class="rank-meta"><strong>4 leads</strong> · ratio 16%</div>
+            </div>
+          </div>
+          <div class="rank-card bronze">
+            <div class="rank-medal bronze">3</div>
+            <div class="rank-comercial">
+              <div class="rank-avatar av-dt">DT</div>
+              <div>
+                <div class="rank-name">Diego Tovar</div>
+                <div class="rank-role">Comercial</div>
+              </div>
+            </div>
+            <div>
+              <div class="rank-value">USD 21.000</div>
+              <div class="rank-meta"><strong>3 leads</strong> · ratio 9%</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Lista de ganados -->
+        <div class="leads-table">
+
+          <div class="lead-row">
+            <div class="lead-name-block">
+              <div class="lead-name">Bodega del Valle</div>
+              <div class="lead-meta">
+                <span class="lead-tag">Recurrente</span>
+                <span class="lead-meta-dot"></span>
+                <span>Formulario web</span>
+              </div>
+            </div>
+            <div class="lead-days">cerrado 22/may · tardó 18 días</div>
+            <div class="lead-avatar av-sm">SM</div>
+            <div class="lead-value">USD 14.700</div>
+            <a class="lead-action" href="#">Ver ficha →</a>
+          </div>
+
+          <div class="lead-row">
+            <div class="lead-name-block">
+              <div class="lead-name">Polo Logístico Sur</div>
+              <div class="lead-meta">
+                <span class="lead-tag">Recurrente · 24 m</span>
+                <span class="lead-meta-dot"></span>
+                <span>LinkedIn</span>
+              </div>
+            </div>
+            <div class="lead-days">cerrado 20/may · tardó 24 días</div>
+            <div class="lead-avatar av-ml">ML</div>
+            <div class="lead-value">USD 12.300</div>
+            <a class="lead-action" href="#">Ver ficha →</a>
+          </div>
+
+          <div class="lead-row">
+            <div class="lead-name-block">
+              <div class="lead-name">Centro Médico Sur</div>
+              <div class="lead-meta">
+                <span class="lead-tag">Proyecto</span>
+                <span class="lead-meta-dot"></span>
+                <span>Referido</span>
+              </div>
+            </div>
+            <div class="lead-days">cerrado 18/may · tardó 12 días</div>
+            <div class="lead-avatar av-dt">DT</div>
+            <div class="lead-value">USD 11.500</div>
+            <a class="lead-action" href="#">Ver ficha →</a>
+          </div>
+
+          <div class="lead-row">
+            <div class="lead-name-block">
+              <div class="lead-name">Hostería Patagonia</div>
+              <div class="lead-meta">
+                <span class="lead-tag">Proyecto</span>
+                <span class="lead-meta-dot"></span>
+                <span>Formulario web</span>
+              </div>
+            </div>
+            <div class="lead-days">cerrado 15/may · tardó 22 días</div>
+            <div class="lead-avatar av-sm">SM</div>
+            <div class="lead-value">USD 8.200</div>
+            <a class="lead-action" href="#">Ver ficha →</a>
+          </div>
+
+          <div class="lead-row">
+            <div class="lead-name-block">
+              <div class="lead-name">Clínica Norte</div>
+              <div class="lead-meta">
+                <span class="lead-tag">Proyecto</span>
+                <span class="lead-meta-dot"></span>
+                <span>LinkedIn</span>
+              </div>
+            </div>
+            <div class="lead-days">cerrado 12/may · tardó 19 días</div>
+            <div class="lead-avatar av-dt">DT</div>
+            <div class="lead-value">USD 7.500</div>
+            <a class="lead-action" href="#">Ver ficha →</a>
+          </div>
+
+          <div class="lead-row">
+            <div class="lead-name-block">
+              <div class="lead-name">Constructora Aliaga</div>
+              <div class="lead-meta">
+                <span class="lead-tag">Recurrente · 6 m</span>
+                <span class="lead-meta-dot"></span>
+                <span>Formulario web</span>
+              </div>
+            </div>
+            <div class="lead-days">cerrado 10/may · tardó 16 días</div>
+            <div class="lead-avatar av-ml">ML</div>
+            <div class="lead-value">USD 5.200</div>
+            <a class="lead-action" href="#">Ver ficha →</a>
+          </div>
+
+          <div class="lead-row">
+            <div class="lead-name-block">
+              <div class="lead-name">Estudio Vázquez & Asoc.</div>
+              <div class="lead-meta">
+                <span class="lead-tag">Recurrente · 12 m</span>
+                <span class="lead-meta-dot"></span>
+                <span>Referido</span>
+              </div>
+            </div>
+            <div class="lead-days">cerrado 8/may · tardó 14 días</div>
+            <div class="lead-avatar av-ml">ML</div>
+            <div class="lead-value">USD 3.800</div>
+            <a class="lead-action" href="#">Ver ficha →</a>
+          </div>
+
+          <div class="lead-row">
+            <div class="lead-name-block">
+              <div class="lead-name">Inmobiliaria Faro</div>
+              <div class="lead-meta">
+                <span class="lead-tag">Recurrente</span>
+                <span class="lead-meta-dot"></span>
+                <span>Formulario web</span>
+              </div>
+            </div>
+            <div class="lead-days">cerrado 6/may · tardó 11 días</div>
+            <div class="lead-avatar av-sm">SM</div>
+            <div class="lead-value">USD 5.800</div>
+            <a class="lead-action" href="#">Ver ficha →</a>
+          </div>
+
+          <div class="lead-row">
+            <div class="lead-name-block">
+              <div class="lead-name">Distribuidora Centro</div>
+              <div class="lead-meta">
+                <span class="lead-tag">Recurrente</span>
+                <span class="lead-meta-dot"></span>
+                <span>WhatsApp</span>
+              </div>
+            </div>
+            <div class="lead-days">cerrado 4/may · tardó 9 días</div>
+            <div class="lead-avatar av-dt">DT</div>
+            <div class="lead-value">USD 3.800</div>
+            <a class="lead-action" href="#">Ver ficha →</a>
+          </div>
+
+          <div class="lead-row">
+            <div class="lead-name-block">
+              <div class="lead-name">Don Eduardo</div>
+              <div class="lead-meta">
+                <span class="lead-tag">Recurrente</span>
+                <span class="lead-meta-dot"></span>
+                <span>WhatsApp</span>
+              </div>
+            </div>
+            <div class="lead-days">cerrado 3/may · tardó 7 días</div>
+            <div class="lead-avatar av-ml">ML</div>
+            <div class="lead-value">USD 2.100</div>
+            <a class="lead-action" href="#">Ver ficha →</a>
+          </div>
+
+          <div class="lead-row">
+            <div class="lead-name-block">
+              <div class="lead-name">Bar La Castellana</div>
+              <div class="lead-meta">
+                <span class="lead-tag">Proyecto</span>
+                <span class="lead-meta-dot"></span>
+                <span>Referido</span>
+              </div>
+            </div>
+            <div class="lead-days">cerrado 2/may · tardó 5 días</div>
+            <div class="lead-avatar av-sm">SM</div>
+            <div class="lead-value">USD 2.400</div>
+            <a class="lead-action" href="#">Ver ficha →</a>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+
+    <!-- SECCIÓN: LO PERDIDO (con motivos) -->
+    <div class="section">
+      <div class="section-header" data-toggle="perdido">
+        <div class="section-title-block">
+          <div class="section-title">Lo <em class="rojo">perdido</em></div>
+          <span class="section-count">3 leads · USD 18.200</span>
+        </div>
+        <div class="section-toggle">
+          <span class="section-summary">Principal motivo: <strong>Precio</strong> (2 de 3)</span>
+          <svg class="toggle-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+      </div>
+      <div class="section-body">
+
+        <!-- Motivos top 3 -->
+        <div class="motivos-strip">
+          <div class="motivo-card">
+            <div class="motivo-rank">1º motivo</div>
+            <div class="motivo-label">Precio</div>
+            <div class="motivo-bar-track">
+              <div class="motivo-bar-fill precio" style="width: 67%"></div>
+            </div>
+            <div class="motivo-meta">
+              <span><strong>2</strong> leads</span>
+              <span>67% · USD 13.400</span>
+            </div>
+          </div>
+          <div class="motivo-card">
+            <div class="motivo-rank">2º motivo</div>
+            <div class="motivo-label">Timing</div>
+            <div class="motivo-bar-track">
+              <div class="motivo-bar-fill timing" style="width: 33%"></div>
+            </div>
+            <div class="motivo-meta">
+              <span><strong>1</strong> lead</span>
+              <span>33% · USD 4.800</span>
+            </div>
+          </div>
+          <div class="motivo-card">
+            <div class="motivo-rank">3º motivo</div>
+            <div class="motivo-label">Competencia</div>
+            <div class="motivo-bar-track">
+              <div class="motivo-bar-fill competencia" style="width: 0%"></div>
+            </div>
+            <div class="motivo-meta">
+              <span><strong>0</strong> leads</span>
+              <span>—</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Lista de perdidos -->
+        <div class="leads-table">
+
+          <div class="lead-row">
+            <div class="lead-name-block">
+              <div class="lead-name">Constructora Litoral</div>
+              <div class="lead-meta">
+                <span class="lead-tag precio">Precio</span>
+                <span class="lead-meta-dot"></span>
+                <span>Pidió bajar 30%, no aceptaron contraoferta</span>
+              </div>
+            </div>
+            <div class="lead-days">perdido 23/may · estaba en Cierre</div>
+            <div class="lead-avatar av-dt">DT</div>
+            <div class="lead-value lost">USD 9.400</div>
+            <a class="lead-action" href="#">Ver ficha →</a>
+          </div>
+
+          <div class="lead-row">
+            <div class="lead-name-block">
+              <div class="lead-name">Agencia Mercurio</div>
+              <div class="lead-meta">
+                <span class="lead-tag precio">Precio</span>
+                <span class="lead-meta-dot"></span>
+                <span>El presupuesto se le fue de mano</span>
+              </div>
+            </div>
+            <div class="lead-days">perdido 17/may · estaba en Propuesta</div>
+            <div class="lead-avatar av-sm">SM</div>
+            <div class="lead-value lost">USD 4.000</div>
+            <a class="lead-action" href="#">Ver ficha →</a>
+          </div>
+
+          <div class="lead-row">
+            <div class="lead-name-block">
+              <div class="lead-name">Mariella Eventos</div>
+              <div class="lead-meta">
+                <span class="lead-tag timing">Timing</span>
+                <span class="lead-meta-dot"></span>
+                <span>Postergó el proyecto para 2027</span>
+              </div>
+            </div>
+            <div class="lead-days">perdido 11/may · estaba en Conversación</div>
+            <div class="lead-avatar av-sm">SM</div>
+            <div class="lead-value lost">USD 4.800</div>
+            <a class="lead-action" href="#">Ver ficha →</a>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+
+</div>
+
+<script>
+  const sidebar = document.querySelector('.sidebar');
+  const backdrop = document.getElementById('backdrop');
+  document.getElementById('open-sidebar')?.addEventListener('click', () => {
+    sidebar.classList.add('open');
+    backdrop.classList.add('active');
+  });
+  backdrop?.addEventListener('click', () => {
+    sidebar.classList.remove('open');
+    backdrop.classList.remove('active');
+  });
+  // Toggle acordeones
+  document.querySelectorAll('.section-header').forEach(header => {
+    header.addEventListener('click', () => {
+      header.closest('.section').classList.toggle('expanded');
+    });
+  });
+</script>
+
+</body>
+</html>

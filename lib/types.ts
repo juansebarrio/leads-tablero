@@ -243,3 +243,75 @@ export type TrendPoint = {
 };
 
 export type PeriodoConversion = "mes_actual" | "mes_anterior" | "trimestre";
+
+// ─── Cerrados (pantalla /cerrados) ───────────────────────────────────────────
+
+export type GanadoMes = {
+  id: string;
+  nombre: string;
+  origen: Origen;
+  estado: Estado;
+  valor_estimado: number;
+  valor_final: number | null;
+  valor_cerrado: number;     // coalesce(valor_final, valor_estimado)
+  tipo_negocio: TipoNegocio;
+  meses_compromiso: number | null;
+  responsable_id: string | null;
+  fecha_creacion: string;
+  fecha_cierre_efectiva: string;
+  comentario_cierre: string | null;
+  responsable_nombre: string | null;
+  responsable_iniciales: string | null;
+  responsable_avatar: string | null;
+  dias_cierre: number;
+};
+
+export type PerdidoMes = {
+  id: string;
+  nombre: string;
+  origen: Origen;
+  estado: Estado;
+  valor_estimado: number;
+  motivo_perdida: MotivoPerdida | null;
+  detalle_perdida: string | null;
+  responsable_id: string | null;
+  fecha_creacion: string;
+  fecha_cierre_efectiva: string;
+  responsable_nombre: string | null;
+  responsable_iniciales: string | null;
+  responsable_avatar: string | null;
+  estado_previo: string | null;
+};
+
+export type RankingComercial = {
+  id: string;
+  nombre: string;
+  iniciales: string;
+  avatar_gradient: string;
+  leads_ganados: number;
+  valor_total: number;
+  ratio_cierre: number; // 0–100
+};
+
+export type MotivoPerdidaAgg = {
+  motivo: MotivoPerdida;
+  cantidad: number;
+  valor_total: number;
+  porcentaje: number; // 0–100
+};
+
+export type MetaMes = {
+  valor: number;
+  currency: "USD";
+};
+
+export type CerradosKpis = {
+  ganados_cantidad: number;
+  valor_cerrado: number;
+  perdidos_cantidad: number;
+  valor_perdido: number;
+  ratio_cierre: number; // 0–100, ganados / (ganados + cierres + perdidos del mes)
+  delta_ganados_pct: number | null; // vs mes anterior
+  delta_valor_pct: number | null;
+  pct_meta: number; // valor_cerrado / meta
+};

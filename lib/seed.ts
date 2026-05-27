@@ -36,7 +36,20 @@ function hoyA(hora: number, minuto = 0): string {
 // ─── Datos ───────────────────────────────────────────────────────────────────
 
 type Origen = "formulario" | "referido" | "linkedin" | "whatsapp";
-type Estado = "nuevo" | "conversacion" | "propuesta" | "cierre" | "ganado";
+type Estado =
+  | "nuevo"
+  | "conversacion"
+  | "propuesta"
+  | "cierre"
+  | "ganado"
+  | "perdido";
+type MotivoPerdida =
+  | "precio"
+  | "timing"
+  | "competencia"
+  | "no_respondio"
+  | "cambio_necesidad"
+  | "otro";
 type Tipo = "recurrente" | "proyecto";
 type Temp = "hot" | "warm" | "med" | "cool";
 type Oport = "caliente" | "esperando_firma" | "por_reactivar" | "sin_asignar";
@@ -90,6 +103,17 @@ type LeadSeed = {
   proximo_paso_hora?: number;
   temperatura: Temp;
   estado_oportunidad?: Oport;
+  // Solo para estados terminales (ganado/perdido). Cierra el ciclo:
+  // dias_cierre = cuántos días atrás se cerró (alimenta v_ganados_mes,
+  // v_perdidos_mes y v_ranking_cierres_mes).
+  dias_cierre?: number;
+  valor_final?: number;          // solo ganados
+  motivo_perdida?: MotivoPerdida; // solo perdidos
+  detalle_perdida?: string;       // solo perdidos
+  comentario_cierre?: string;     // ganados o perdidos
+  // Para perdidos: estado en el que estaba antes de marcarse perdido.
+  // Alimenta el "estaba en X" de v_perdidos_mes via cambio_estado.
+  estado_previo?: "conversacion" | "propuesta" | "cierre";
 };
 
 // Mix sector-agnóstico: constructora, contable, clínica, agencia, inmobiliaria,
@@ -465,29 +489,152 @@ const LEADS: LeadSeed[] = [
     estado_oportunidad: "esperando_firma",
   },
 
-  // Ganados
+  // ─── Ganados del mes ────────────────────────────────────────────
+  // dias_cierre <= 25 garantiza que el lead caiga en el mes corriente
+  // para alimentar v_ganados_mes y v_ranking_cierres_mes.
   {
     nombre: "Estudio Jurídico Maraví",
     origen: "referido",
     estado: "ganado",
     valor_estimado: 3500,
+    valor_final: 3800,
     tipo_negocio: "recurrente",
     meses_compromiso: 12,
     responsable: "ML",
     dias_creacion: 45,
-    dias_ultimo_contacto: 5,
+    dias_ultimo_contacto: 8,
+    dias_cierre: 8,
     temperatura: "warm",
+    comentario_cierre:
+      "Cerramos por 12 meses con descuento del 8% por pago semestral.",
   },
   {
     nombre: "Hotel Boutique San Telmo",
     origen: "linkedin",
     estado: "ganado",
     valor_estimado: 6200,
+    valor_final: 7500,
     tipo_negocio: "proyecto",
     responsable: "DT",
     dias_creacion: 50,
-    dias_ultimo_contacto: 8,
+    dias_ultimo_contacto: 14,
+    dias_cierre: 14,
     temperatura: "warm",
+    comentario_cierre: "Subieron el alcance al doble: sumaron 2 sucursales.",
+  },
+  {
+    nombre: "Bodega del Valle",
+    origen: "formulario",
+    estado: "ganado",
+    valor_estimado: 12000,
+    valor_final: 14700,
+    tipo_negocio: "recurrente",
+    meses_compromiso: 12,
+    responsable: "SM",
+    dias_creacion: 40,
+    dias_ultimo_contacto: 5,
+    dias_cierre: 5,
+    temperatura: "hot",
+  },
+  {
+    nombre: "Polo Logístico Sur",
+    origen: "linkedin",
+    estado: "ganado",
+    valor_estimado: 10000,
+    valor_final: 12300,
+    tipo_negocio: "recurrente",
+    meses_compromiso: 24,
+    responsable: "ML",
+    dias_creacion: 38,
+    dias_ultimo_contacto: 11,
+    dias_cierre: 11,
+    temperatura: "hot",
+  },
+  {
+    nombre: "Centro Médico Sur",
+    origen: "referido",
+    estado: "ganado",
+    valor_estimado: 11500,
+    tipo_negocio: "proyecto",
+    responsable: "DT",
+    dias_creacion: 28,
+    dias_ultimo_contacto: 16,
+    dias_cierre: 16,
+    temperatura: "warm",
+  },
+  {
+    nombre: "Distribuidora Centro",
+    origen: "whatsapp",
+    estado: "ganado",
+    valor_estimado: 3800,
+    tipo_negocio: "recurrente",
+    meses_compromiso: 6,
+    responsable: "DT",
+    dias_creacion: 12,
+    dias_ultimo_contacto: 3,
+    dias_cierre: 3,
+    temperatura: "hot",
+  },
+  {
+    nombre: "Inmobiliaria Faro",
+    origen: "formulario",
+    estado: "ganado",
+    valor_estimado: 5800,
+    tipo_negocio: "recurrente",
+    meses_compromiso: 6,
+    responsable: "SM",
+    dias_creacion: 22,
+    dias_ultimo_contacto: 18,
+    dias_cierre: 18,
+    temperatura: "warm",
+  },
+
+  // ─── Perdidos del mes ───────────────────────────────────────────
+  {
+    nombre: "Constructora Litoral",
+    origen: "linkedin",
+    estado: "perdido",
+    valor_estimado: 9400,
+    tipo_negocio: "proyecto",
+    responsable: "DT",
+    dias_creacion: 35,
+    dias_ultimo_contacto: 4,
+    dias_cierre: 4,
+    temperatura: "warm",
+    motivo_perdida: "precio",
+    detalle_perdida:
+      "Pidió bajar 30% el precio, no aceptaron contraoferta. El director firmó con un proveedor más barato.",
+    estado_previo: "cierre",
+  },
+  {
+    nombre: "Agencia Mercurio Norte",
+    origen: "formulario",
+    estado: "perdido",
+    valor_estimado: 4000,
+    tipo_negocio: "proyecto",
+    responsable: "SM",
+    dias_creacion: 30,
+    dias_ultimo_contacto: 10,
+    dias_cierre: 10,
+    temperatura: "cool",
+    motivo_perdida: "precio",
+    detalle_perdida: "El presupuesto se les fue de mano.",
+    estado_previo: "propuesta",
+  },
+  {
+    nombre: "Mariella Eventos",
+    origen: "referido",
+    estado: "perdido",
+    valor_estimado: 4800,
+    tipo_negocio: "proyecto",
+    responsable: "SM",
+    dias_creacion: 25,
+    dias_ultimo_contacto: 16,
+    dias_cierre: 16,
+    temperatura: "cool",
+    motivo_perdida: "timing",
+    detalle_perdida: "Postergó el proyecto para 2027.",
+    estado_previo: "conversacion",
   },
 ];
 
@@ -632,9 +779,6 @@ const ORDEN_ESTADOS_SEED: Estado[] = [
 ];
 
 function cambiosEstadoSimulados(lead: LeadSeed, leadId: string) {
-  const idxFinal = ORDEN_ESTADOS_SEED.indexOf(lead.estado);
-  if (idxFinal <= 0) return []; // 'nuevo' no tiene cambios previos
-
   const cambios: Array<{
     lead_id: string;
     fecha: string;
@@ -643,29 +787,47 @@ function cambiosEstadoSimulados(lead: LeadSeed, leadId: string) {
     metadata: Record<string, string>;
   }> = [];
 
-  // Cuántos saltos hizo: idxFinal saltos (de nuevo a su estado actual).
-  // Distribuir uniformemente entre día = dias_creacion (ingreso) y día 0 (ahora).
-  // Para leads en estados muy avanzados, repartimos en partes iguales.
-  for (let i = 1; i <= idxFinal; i++) {
-    const from = ORDEN_ESTADOS_SEED[i - 1];
-    const to = ORDEN_ESTADOS_SEED[i];
-    // El i-ésimo cambio cae a t = dias_creacion * (1 - i/(idxFinal+1)).
-    // Ejemplo: lead creado hace 30d, estado=cierre (idx=3).
-    //   cambio 1 (nuevo→conv): día 22, cambio 2 (conv→prop): día 15,
-    //   cambio 3 (prop→cierre): día 7. Distribución limpia.
-    const fraccion = i / (idxFinal + 1);
-    const diasAtrasCambio = Math.max(
-      0,
-      Math.round(lead.dias_creacion * (1 - fraccion)),
-    );
+  // Estado "efectivo" para distribuir la cadena de cambios. Para perdidos
+  // usamos su estado_previo (la trayectoria normal antes de perderse) y
+  // sumamos un último cambio "de estado_previo a perdido" al final.
+  const estadoCadena: Estado =
+    lead.estado === "perdido"
+      ? (lead.estado_previo ?? "conversacion")
+      : lead.estado;
+  const idxFinal = ORDEN_ESTADOS_SEED.indexOf(estadoCadena);
+  if (idxFinal > 0) {
+    for (let i = 1; i <= idxFinal; i++) {
+      const from = ORDEN_ESTADOS_SEED[i - 1];
+      const to = ORDEN_ESTADOS_SEED[i];
+      // El i-ésimo cambio cae a t = dias_creacion * (1 - i/(idxFinal+1)).
+      const fraccion = i / (idxFinal + 1);
+      const diasAtrasCambio = Math.max(
+        0,
+        Math.round(lead.dias_creacion * (1 - fraccion)),
+      );
+      cambios.push({
+        lead_id: leadId,
+        fecha: diasAtras(diasAtrasCambio),
+        canal: "cambio_estado",
+        nota: `De ${from} a ${to}`,
+        metadata: { from, to },
+      });
+    }
+  }
+
+  // Cambio final hacia 'perdido' (solo perdidos). Permite a v_perdidos_mes
+  // deducir estado_previo via metadata.from.
+  if (lead.estado === "perdido") {
+    const diasCierre = lead.dias_cierre ?? 0;
     cambios.push({
       lead_id: leadId,
-      fecha: diasAtras(diasAtrasCambio),
+      fecha: diasAtras(diasCierre),
       canal: "cambio_estado",
-      nota: `De ${from} a ${to}`,
-      metadata: { from, to },
+      nota: `De ${estadoCadena} a perdido`,
+      metadata: { from: estadoCadena, to: "perdido" },
     });
   }
+
   return cambios;
 }
 
@@ -774,6 +936,12 @@ export async function resetAndSeed(): Promise<SeedResult> {
         : null,
     temperatura: l.temperatura,
     estado_oportunidad: l.estado_oportunidad ?? null,
+    // Columnas de cierre (solo se setean en ganados/perdidos).
+    fecha_cierre: l.dias_cierre !== undefined ? diasAtras(l.dias_cierre) : null,
+    valor_final: l.valor_final ?? null,
+    motivo_perdida: l.motivo_perdida ?? null,
+    detalle_perdida: l.detalle_perdida ?? null,
+    comentario_cierre: l.comentario_cierre ?? null,
   }));
 
   const { data: leadsInsertados, error: errLeads } = await supabase

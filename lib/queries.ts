@@ -3,23 +3,29 @@
 
 import { createClient } from "@/lib/supabase/server";
 import type {
+  CerradosKpis,
   Comercial,
   ComercialConMetricas,
   Contacto,
   EquipoMetricas,
   EventoAgenda,
   FunnelData,
+  GanadoMes,
   Lead,
   LeadAfectado,
   LeadDetalle,
   LeadFrio,
   LeadKanban,
+  MetaMes,
+  MotivoPerdidaAgg,
   OportunidadDia,
   Patron,
   PatronesStats,
   PatronIa,
   PatronTipo,
+  PerdidoMes,
   PipelineEstado,
+  RankingComercial,
   TimingItem,
   TrendPoint,
 } from "@/lib/types";
@@ -379,3 +385,114 @@ function capitalize(s: string): string {
 
 // Re-export el tipo PatronTipo para evitar imports cruzados en el caller.
 export type { PatronTipo };
+
+// ─── Pantalla /cerrados ──────────────────────────────────────────────────────
+
+export async function getGanadosMes(): Promise<GanadoMes[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("v_ganados_mes").select("*");
+  if (error) throw error;
+  return ((data ?? []) as GanadoMes[]).map((g) => ({
+    ...g,
+    valor_estimado: Number(g.valor_estimado) || 0,
+    valor_final: g.valor_final == null ? null : Number(g.valor_final),
+    valor_cerrado: Number(g.valor_cerrado) || 0,
+  }));
+}
+
+export async function getPerdidosMes(): Promise<PerdidoMes[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("v_perdidos_mes").select("*");
+  if (error) throw error;
+  return ((data ?? []) as PerdidoMes[]).map((p) => ({
+    ...p,
+    valor_estimado: Number(p.valor_estimado) || 0,
+  }));
+}
+
+export async function getRankingCierres(): Promise<RankingComercial[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("v_ranking_cierres_mes")
+    .select("*")
+    .limit(3);
+  if (error) throw error;
+  return ((data ?? []) as RankingComercial[]).map((r) => ({
+    ...r,
+    leads_ganados: Number(r.leads_ganados) || 0,
+    valor_total: Number(r.valor_total) || 0,
+    ratio_cierre: Number(r.ratio_cierre) || 0,
+  }));
+}
+
+export async function getMotivosPerdidaMes(): Promise<MotivoPerdidaAgg[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("v_motivos_perdida_mes")
+    .select("*");
+  if (error) throw error;
+  return ((data ?? []) as MotivoPerdidaAgg[]).map((m) => ({
+    ...m,
+    cantidad: Number(m.cantidad) || 0,
+    valor_total: Number(m.valor_total) || 0,
+    porcentaje: Number(m.porcentaje) || 0,
+  }));
+}
+
+// Hardcoded por ahora; cuando exista tabla `configuracion` se mueve ahí.
+export async function getMetaMes(): Promise<MetaMes> {
+  return { valor: 75000, currency: "USD" };
+}
+
+// KPIs derivados de las queries anteriores + funnel del mes para deltas.
+// Toma ganados/perdidos ya cargados para no doblar queries.
+export function computeCerradosKpis(
+  ganados: GanadoMes[],
+  perdidos: PerdidoMes[],
+  funnelActual: FunnelData,
+  funnelAnterior: FunnelData,
+  meta: MetaMes,
+): CerradosKpis {
+  const ganadosCant = ganados.length;
+  const valorCerrado = ganados.reduce((acc, g) => acc + g.valor_cerrado, 0);
+  const perdidosCant = perdidos.length;
+  const valorPerdido = perdidos.reduce((acc, p) => acc + p.valor_estimado, 0);
+
+  // Ratio del mes: ganados / (ganados + perdidos del mes). Si no hay datos,
+  // 0. Es la lectura más simple del "cuánto cerré de lo que se decidió".
+  const ratioCierre =
+    ganadosCant + perdidosCant === 0
+      ? 0
+      : Math.round((ganadosCant / (ganadosCant + perdidosCant)) * 100);
+
+  const deltaGanadosPct =
+    funnelAnterior.ganados === 0
+      ? null
+      : Math.round(
+          ((funnelActual.ganados - funnelAnterior.ganados) /
+            funnelAnterior.ganados) *
+            100,
+        );
+  const deltaValorPct =
+    funnelAnterior.valor_ganado === 0
+      ? null
+      : Math.round(
+          ((funnelActual.valor_ganado - funnelAnterior.valor_ganado) /
+            funnelAnterior.valor_ganado) *
+            100,
+        );
+  const pctMeta = meta.valor === 0
+    ? 0
+    : Math.round((valorCerrado / meta.valor) * 100);
+
+  return {
+    ganados_cantidad: ganadosCant,
+    valor_cerrado: valorCerrado,
+    perdidos_cantidad: perdidosCant,
+    valor_perdido: valorPerdido,
+    ratio_cierre: ratioCierre,
+    delta_ganados_pct: deltaGanadosPct,
+    delta_valor_pct: deltaValorPct,
+    pct_meta: pctMeta,
+  };
+}
