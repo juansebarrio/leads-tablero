@@ -87,7 +87,17 @@ export function AgendaPanel({ events, cierreMes }: AgendaPanelProps) {
             style={{ fontVariationSettings: '"opsz" 144' }}
           >
             USD {(cierreMes.valor / 1000).toFixed(0)}k{" "}
-            <em className="italic text-violeta">· {cierreMes.porcentaje}%</em>
+            <em
+              className={`italic ${
+                cierreMes.porcentaje >= 100
+                  ? "text-verde"
+                  : cierreMes.porcentaje < 70
+                    ? "text-rojo"
+                    : "text-amarillo"
+              }`}
+            >
+              · {cierreMes.porcentaje}%
+            </em>
           </div>
           <div className="text-[11px] text-muted leading-snug">
             Faltan{" "}

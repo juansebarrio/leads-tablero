@@ -4,6 +4,7 @@ import { PipelineBoard } from "@/components/pipeline/PipelineBoard";
 import { getCurrentUser } from "@/lib/auth";
 import {
   getAgendaDia,
+  getCierreMesData,
   getComerciales,
   getLeadsFrios,
   getLeadsParaKanban,
@@ -33,6 +34,7 @@ export default async function PipelinePage({
       frios,
       agendaEvents,
       patronesCount,
+      cierreMes,
     ] = await Promise.all([
       getCurrentUser(),
       getLeadsParaKanban(),
@@ -41,6 +43,7 @@ export default async function PipelinePage({
       getLeadsFrios(),
       getAgendaDia(),
       getPatronesActivosCount(),
+      getCierreMesData(),
     ]);
     datos = {
       currentUser,
@@ -50,6 +53,7 @@ export default async function PipelinePage({
       frios,
       agendaEvents,
       patronesCount,
+      cierreMes,
     };
   } catch (err) {
     return (
@@ -71,6 +75,7 @@ export default async function PipelinePage({
     frios,
     agendaEvents,
     patronesCount,
+    cierreMes,
   } = datos;
 
   const counts = {
@@ -89,7 +94,7 @@ export default async function PipelinePage({
     <DashboardLayout
       agendaEvents={agendaEvents}
       sidebarCounts={counts}
-      cierreMes={{ valor: 51000, porcentaje: 68, diasRestantes: 6, meta: 75000 }}
+      cierreMes={cierreMes}
       currentUser={currentUser}
       // El board maneja su propio padding (necesita full-width para scroll
       // horizontal en tablet/mobile).

@@ -10,6 +10,7 @@ import { PipelineBar } from "@/components/PipelineBar";
 import { getCurrentUser } from "@/lib/auth";
 import {
   getAgendaDia,
+  getCierreMesData,
   getLeadsFrios,
   getOportunidadesDia,
   getPatronesActivosCount,
@@ -32,6 +33,7 @@ export default async function Page() {
       agendaEvents,
       patron,
       patronesCount,
+      cierreMes,
     ] = await Promise.all([
       getCurrentUser(),
       getPipelineResumen(),
@@ -40,6 +42,7 @@ export default async function Page() {
       getAgendaDia(),
       getPrimerPatronIa(),
       getPatronesActivosCount(),
+      getCierreMesData(),
     ]);
     data = {
       currentUser,
@@ -49,6 +52,7 @@ export default async function Page() {
       agendaEvents,
       patron,
       patronesCount,
+      cierreMes,
     };
   } catch (err) {
     return (
@@ -70,6 +74,7 @@ export default async function Page() {
     agendaEvents,
     patron,
     patronesCount,
+    cierreMes,
   } = data;
 
   const cantidadFrios = frios.length;
@@ -91,7 +96,7 @@ export default async function Page() {
     <DashboardLayout
       agendaEvents={agendaEvents}
       sidebarCounts={counts}
-      cierreMes={{ valor: 51000, porcentaje: 68, diasRestantes: 6, meta: 75000 }}
+      cierreMes={cierreMes}
       currentUser={currentUser}
     >
       <DashboardHero

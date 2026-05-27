@@ -59,7 +59,10 @@ export function KanbanColumn({ estado, nombre, sub, leads }: KanbanColumnProps) 
           items={leads.map((l) => l.id)}
           strategy={verticalListSortingStrategy}
         >
-          <AnimatePresence initial={false}>
+          {/* mode="popLayout" hace que las cards restantes se reacomoden con
+              stagger natural mientras la card removida sale, en lugar de
+              "saltar" inmediato. */}
+          <AnimatePresence initial={false} mode="popLayout">
             {leads.map((lead) => (
               <KanbanCard key={lead.id} lead={lead} />
             ))}

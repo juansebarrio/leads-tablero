@@ -444,6 +444,34 @@ export async function getMetaMes(): Promise<MetaMes> {
   return { valor: 75000, currency: "USD" };
 }
 
+// Datos para la card "Cierre del mes" del AgendaPanel. Antes era un
+// objeto literal hardcoded en cada page; ahora deriva de los ganados del
+// mes corriente y la meta.
+export async function getCierreMesData(): Promise<{
+  valor: number;
+  porcentaje: number;
+  diasRestantes: number;
+  meta: number;
+}> {
+  const [ganados, meta] = await Promise.all([
+    getGanadosMes(),
+    getMetaMes(),
+  ]);
+  const valor = ganados.reduce((acc, g) => acc + g.valor_cerrado, 0);
+  const porcentaje = meta.valor === 0
+    ? 0
+    : Math.round((valor / meta.valor) * 100);
+  // Días restantes hasta el último día del mes actual (en ART).
+  const ahora = new Date();
+  const ultimoDelMes = new Date(
+    ahora.getFullYear(),
+    ahora.getMonth() + 1,
+    0,
+  ).getDate();
+  const diasRestantes = Math.max(0, ultimoDelMes - ahora.getDate());
+  return { valor, porcentaje, diasRestantes, meta: meta.valor };
+}
+
 // KPIs derivados de las queries anteriores + funnel del mes para deltas.
 // Toma ganados/perdidos ya cargados para no doblar queries.
 export function computeCerradosKpis(

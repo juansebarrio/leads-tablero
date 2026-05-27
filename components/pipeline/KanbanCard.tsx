@@ -73,6 +73,11 @@ export function KanbanCard({ lead, overlay = false }: KanbanCardProps) {
     <motion.div
       layout
       layoutId={overlay ? undefined : `card-${lead.id}`}
+      // Spring suave en mounts + reposicionamiento entre columnas.
+      // El layoutId hace que la card "vuele" en lugar de aparecer abrupto.
+      initial={{ scale: 0.95, opacity: 0.85 }}
+      animate={{ scale: 1, opacity: 1 }}
+      transition={{ type: "spring", stiffness: 380, damping: 30 }}
       ref={setNodeRef}
       style={style}
       {...attributes}

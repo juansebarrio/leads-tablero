@@ -61,7 +61,7 @@ export function PipelineBar({ data }: PipelineBarProps) {
         <div className="text-[13px] text-muted">
           <strong className="font-display text-[19px] font-semibold text-ink mr-1.5 -tracking-[0.01em]">
             {formatUSD(totalActivo)}
-          </strong>
+          </strong>{" "}
           activos
         </div>
       </div>

@@ -14,6 +14,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { formatFechaRelativa } from "@/lib/lead-utils";
 import {
   getAgendaDia,
+  getCierreMesData,
   getLeadConDetalle,
   getLeadsFrios,
   getPatronesActivosCount,
@@ -33,16 +34,32 @@ export default async function LeadPage({
 
   let datos;
   try {
-    const [currentUser, lead, pipeline, frios, agendaEvents, patronesCount] =
-      await Promise.all([
-        getCurrentUser(),
-        getLeadConDetalle(id),
-        getPipelineResumen(),
-        getLeadsFrios(),
-        getAgendaDia(),
-        getPatronesActivosCount(),
-      ]);
-    datos = { currentUser, lead, pipeline, frios, agendaEvents, patronesCount };
+    const [
+      currentUser,
+      lead,
+      pipeline,
+      frios,
+      agendaEvents,
+      patronesCount,
+      cierreMes,
+    ] = await Promise.all([
+      getCurrentUser(),
+      getLeadConDetalle(id),
+      getPipelineResumen(),
+      getLeadsFrios(),
+      getAgendaDia(),
+      getPatronesActivosCount(),
+      getCierreMesData(),
+    ]);
+    datos = {
+      currentUser,
+      lead,
+      pipeline,
+      frios,
+      agendaEvents,
+      patronesCount,
+      cierreMes,
+    };
   } catch (err) {
     return (
       <ErrorView
@@ -55,8 +72,15 @@ export default async function LeadPage({
     );
   }
 
-  const { currentUser, lead, pipeline, frios, agendaEvents, patronesCount } =
-    datos;
+  const {
+    currentUser,
+    lead,
+    pipeline,
+    frios,
+    agendaEvents,
+    patronesCount,
+    cierreMes,
+  } = datos;
   if (!lead) notFound();
 
   const counts = {
@@ -78,7 +102,7 @@ export default async function LeadPage({
     <DashboardLayout
       agendaEvents={agendaEvents}
       sidebarCounts={counts}
-      cierreMes={{ valor: 51000, porcentaje: 68, diasRestantes: 6, meta: 75000 }}
+      cierreMes={cierreMes}
       currentUser={currentUser}
     >
       {/* Top row: breadcrumb + acciones */}

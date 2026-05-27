@@ -6,6 +6,7 @@ import { formatMesAnio, formatUSD } from "@/lib/format";
 import { getCurrentUser } from "@/lib/auth";
 import {
   getAgendaDia,
+  getCierreMesData,
   getComercialesConMetricas,
   getEquipoMetricas,
   getLeadsFrios,
@@ -26,6 +27,7 @@ export default async function EquipoPage() {
       agendaEvents,
       leadsKanban,
       patronesCount,
+      cierreMes,
     ] = await Promise.all([
       getCurrentUser(),
       getComercialesConMetricas(),
@@ -35,6 +37,7 @@ export default async function EquipoPage() {
       getAgendaDia(),
       getLeadsParaKanban(),
       getPatronesActivosCount(),
+      getCierreMesData(),
     ]);
     datos = {
       currentUser,
@@ -45,6 +48,7 @@ export default async function EquipoPage() {
       agendaEvents,
       leadsKanban,
       patronesCount,
+      cierreMes,
     };
   } catch (err) {
     return (
@@ -67,6 +71,7 @@ export default async function EquipoPage() {
     agendaEvents,
     leadsKanban,
     patronesCount,
+    cierreMes,
   } = datos;
 
   const counts = {
@@ -99,7 +104,7 @@ export default async function EquipoPage() {
     <DashboardLayout
       agendaEvents={agendaEvents}
       sidebarCounts={counts}
-      cierreMes={{ valor: 51000, porcentaje: 68, diasRestantes: 6, meta: 75000 }}
+      cierreMes={cierreMes}
       currentUser={currentUser}
     >
       <header className="mb-7">

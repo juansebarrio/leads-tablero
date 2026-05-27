@@ -13,6 +13,7 @@ import {
   getAgendaDia,
   getFunnelData,
   getLeadsFrios,
+  getCierreMesData,
   getLeadsParaKanban,
   getPatronesActivosCount,
   getPipelineResumen,
@@ -57,6 +58,7 @@ export default async function ConversionPage({
       agendaEvents,
       leadsKanban,
       patronesCount,
+      cierreMes,
     ] = await Promise.all([
       getCurrentUser(),
       getFunnelData(mesesAtras),
@@ -69,6 +71,7 @@ export default async function ConversionPage({
       getAgendaDia(),
       getLeadsParaKanban(),
       getPatronesActivosCount(),
+      getCierreMesData(),
     ]);
     datos = {
       currentUser,
@@ -82,6 +85,7 @@ export default async function ConversionPage({
       agendaEvents,
       leadsKanban,
       patronesCount,
+      cierreMes,
     };
   } catch (err) {
     return (
@@ -107,6 +111,7 @@ export default async function ConversionPage({
     agendaEvents,
     leadsKanban,
     patronesCount,
+    cierreMes,
   } = datos;
 
   // El funnel y los KPIs se sirven del período activo. Para "trimestre"
@@ -150,7 +155,7 @@ export default async function ConversionPage({
     <DashboardLayout
       agendaEvents={agendaEvents}
       sidebarCounts={counts}
-      cierreMes={{ valor: 51000, porcentaje: 68, diasRestantes: 6, meta: 75000 }}
+      cierreMes={cierreMes}
       currentUser={currentUser}
     >
       {/* Header */}
