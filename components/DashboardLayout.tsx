@@ -1,6 +1,9 @@
 import { AgendaPanel } from "@/components/AgendaPanel";
 import { Backdrop } from "@/components/Backdrop";
 import { ConfirmarGanadoDrawer } from "@/components/ConfirmarGanadoLauncher";
+import { CommandPalette } from "@/components/busqueda/CommandPalette";
+import { CommandPaletteProvider } from "@/components/busqueda/command-palette-context";
+import { GlobalShortcuts } from "@/components/busqueda/GlobalShortcuts";
 import { DrawerProvider } from "@/components/drawer-context";
 import { EditarLeadDrawer } from "@/components/EditarLeadLauncher";
 import { MarcarPerdidoDrawer } from "@/components/MarcarPerdidoLauncher";
@@ -46,22 +49,26 @@ export async function DashboardLayout({
 
   return (
     <DrawerProvider>
-      <TopbarMobile agendaCount={agendaEvents.length} />
-      <Backdrop />
-      <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] min-h-screen">
-        <SidebarLeft counts={sidebarCounts} currentUser={currentUser} />
-        <main className={mainClassName}>{children}</main>
-      </div>
+      <CommandPaletteProvider>
+        <GlobalShortcuts />
+        <TopbarMobile agendaCount={agendaEvents.length} />
+        <Backdrop />
+        <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] min-h-screen">
+          <SidebarLeft counts={sidebarCounts} currentUser={currentUser} />
+          <main className={mainClassName}>{children}</main>
+        </div>
 
-      {/* Overlays globales: un solo mount por drawer, mutual exclusion
-          garantizada por el DrawerProvider. */}
-      <AgendaPanel events={agendaEvents} cierreMes={cierreMes} />
-      <NuevoLeadDrawer />
-      <RegistrarContactoDrawer />
-      <EditarLeadDrawer />
-      <ReasignarDrawer comerciales={comerciales} />
-      <MarcarPerdidoDrawer />
-      <ConfirmarGanadoDrawer />
+        {/* Overlays globales: un solo mount por drawer, mutual exclusion
+            garantizada por el DrawerProvider. */}
+        <AgendaPanel events={agendaEvents} cierreMes={cierreMes} />
+        <NuevoLeadDrawer />
+        <RegistrarContactoDrawer />
+        <EditarLeadDrawer />
+        <ReasignarDrawer comerciales={comerciales} />
+        <MarcarPerdidoDrawer />
+        <ConfirmarGanadoDrawer />
+        <CommandPalette />
+      </CommandPaletteProvider>
     </DrawerProvider>
   );
 }

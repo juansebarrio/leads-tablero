@@ -5,6 +5,7 @@ import { DashboardLayout } from "@/components/DashboardLayout";
 import { ErrorView, PasosConfigSupabase } from "@/components/ErrorView";
 import { EventosAgendaLead } from "@/components/EventosAgendaLead";
 import { LeadActions } from "@/components/LeadActions";
+import { TrackVisitedLead } from "@/components/busqueda/TrackVisitedLead";
 import { LeadDataGrid } from "@/components/LeadDataGrid";
 import { LeadHeader } from "@/components/LeadHeader";
 import { NextStepBanner } from "@/components/NextStepBanner";
@@ -90,6 +91,7 @@ export default async function LeadPage({
           <span className="hidden sm:inline">Volver al tablero</span>
           <span className="inline sm:hidden">Tablero</span>
         </Link>
+        <TrackVisitedLead leadId={lead.id} />
         <LeadActions
           leadId={lead.id}
           leadNombre={lead.nombre}

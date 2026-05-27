@@ -16,6 +16,7 @@ import {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Nucleus } from "@/components/Nucleus";
+import { useCommandPalette } from "@/components/busqueda/command-palette-context";
 import { useDrawers } from "@/components/drawer-context";
 import type { CurrentUser } from "@/lib/auth";
 
@@ -51,6 +52,7 @@ type NavItem = {
 
 export function SidebarLeft({ counts = {}, currentUser }: SidebarLeftProps) {
   const { isOpen, closeAll } = useDrawers();
+  const { open: openPalette } = useCommandPalette();
   const sidebarOpen = isOpen("sidebar");
   const pathname = usePathname();
 
@@ -127,13 +129,21 @@ export function SidebarLeft({ counts = {}, currentUser }: SidebarLeftProps) {
       </div>
 
       {/* Search */}
-      <div className="bg-panel-2 border border-line rounded-md px-2.5 py-1.5 flex items-center gap-2 text-[12px] text-muted">
+      <button
+        type="button"
+        onClick={() => {
+          closeAll();
+          openPalette();
+        }}
+        className="bg-panel-2 border border-line rounded-md px-2.5 py-1.5 flex items-center gap-2 text-[12px] text-muted hover:border-ink-2 hover:text-ink-2 cursor-pointer transition w-full"
+        aria-label="Abrir búsqueda global"
+      >
         <Search className="w-3.5 h-3.5" strokeWidth={2} />
         <span>Buscar lead</span>
-        <span className="ml-auto text-[10.5px] bg-white border border-line px-1.5 py-px rounded-sm text-muted-2">
-          ⌘ K
+        <span className="ml-auto text-[10.5px] bg-white border border-line px-1.5 py-px rounded-sm text-muted-2 font-mono">
+          ⌘K
         </span>
-      </div>
+      </button>
 
       {/* Nav: sin títulos de sección — Pipeline + sus sub-estados quedan
           agrupados visualmente por la indentación de los InfoRow. */}

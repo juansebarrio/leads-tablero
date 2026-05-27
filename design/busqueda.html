@@ -1,0 +1,771 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>JS80 · Búsqueda global ⌘K</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F7F6F2;
+    --panel: #FFFFFF;
+    --panel-2: #FBFAF6;
+    --ink: #0E0E12;
+    --ink-2: #2A2A33;
+    --muted: #6B6B75;
+    --muted-2: #9A9AA3;
+    --line: #E8E6DE;
+    --line-2: #F0EEE6;
+    --azul: #6B8CFF;
+    --azul-soft: #EDF1FF;
+    --violeta: #8B6FFF;
+    --violeta-soft: #F1ECFF;
+    --turquesa: #5DC7E0;
+    --turquesa-soft: #E5F4F9;
+    --coral: #FF8AA0;
+    --rojo: #C8362E;
+    --rojo-soft: #FBEAE7;
+    --amarillo: #B8860B;
+    --amarillo-soft: #FBF3DB;
+    --verde: #3E8A5A;
+    --verde-soft: #E6F1EB;
+    --display: 'Fraunces', Georgia, serif;
+    --body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    --mono: 'JetBrains Mono', ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    font-family: var(--body);
+    color: var(--ink);
+    background: var(--bg);
+    font-size: 13px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+  svg { display: block; }
+
+  /* Página de muestra (3 estados lado a lado) */
+  .page-container {
+    padding: 40px 32px 60px;
+    max-width: 1500px;
+    margin: 0 auto;
+  }
+  .page-eyebrow {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .page-title {
+    font-family: var(--display);
+    font-weight: 500;
+    font-variation-settings: "SOFT" 100, "opsz" 144;
+    font-size: 32px;
+    line-height: 1.05;
+    letter-spacing: -0.025em;
+    color: var(--ink);
+    margin-bottom: 10px;
+  }
+  .page-title em {
+    font-style: italic;
+    color: var(--violeta);
+    font-weight: 500;
+  }
+  .page-sub {
+    font-size: 13.5px;
+    color: var(--muted);
+    margin-bottom: 36px;
+    max-width: 700px;
+  }
+
+  /* Grid de 3 estados */
+  .states-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 20px;
+  }
+  .state-card {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .state-label {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .state-label strong {
+    color: var(--ink);
+    font-weight: 700;
+  }
+
+  /* CONTAINER del modal (sin overlay, para preview) */
+  .modal {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    box-shadow: 0 20px 50px rgba(14, 14, 18, 0.12), 0 4px 12px rgba(14, 14, 18, 0.04);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* INPUT del modal */
+  .modal-search {
+    display: flex;
+    align-items: center;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--line-2);
+    gap: 12px;
+  }
+  .search-icon {
+    color: var(--muted-2);
+    flex-shrink: 0;
+  }
+  .search-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    font-family: var(--body);
+    font-size: 15px;
+    color: var(--ink);
+    font-weight: 400;
+  }
+  .search-input::placeholder { color: var(--muted-2); }
+  .search-esc {
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    color: var(--muted);
+    flex-shrink: 0;
+    letter-spacing: 0.02em;
+  }
+
+  /* RESULTS scroll area */
+  .modal-results {
+    overflow-y: auto;
+    max-height: 460px;
+    padding: 8px 0;
+  }
+
+  /* SECCIÓN dentro del modal */
+  .results-section {
+    padding: 6px 0;
+  }
+  .section-header {
+    padding: 8px 18px 6px;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .section-count {
+    color: var(--muted-2);
+    font-weight: 500;
+  }
+
+  /* ITEMS de resultado */
+  .result-item {
+    padding: 9px 18px;
+    display: grid;
+    grid-template-columns: 28px 1fr auto;
+    gap: 12px;
+    align-items: center;
+    cursor: pointer;
+    border-left: 2px solid transparent;
+  }
+  .result-item:hover {
+    background: var(--panel-2);
+  }
+  .result-item.selected {
+    background: var(--violeta-soft);
+    border-left-color: var(--violeta);
+  }
+
+  .result-icon {
+    width: 28px; height: 28px;
+    border-radius: 7px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    color: var(--muted);
+  }
+  .result-icon.lead { background: var(--turquesa-soft); border-color: #BBE3EE; color: var(--turquesa); }
+  .result-icon.action { background: var(--violeta-soft); border-color: #D6CAFF; color: var(--violeta); }
+  .result-icon.page { background: var(--azul-soft); border-color: #C9D5FF; color: var(--azul); }
+  .result-icon.person { background: linear-gradient(135deg, #8B6FFF, #5DC7E0); color: white; border-color: transparent; font-weight: 700; font-size: 10.5px; }
+  .result-icon.person.dt { background: linear-gradient(135deg, #FF8AA0, #FFB088); }
+  .result-icon.person.sm { background: linear-gradient(135deg, #6B8CFF, #8B6FFF); }
+
+  .result-body { min-width: 0; }
+  .result-title {
+    font-size: 13.5px;
+    color: var(--ink);
+    font-weight: 500;
+    margin-bottom: 1px;
+    line-height: 1.3;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .result-title mark {
+    background: var(--amarillo-soft);
+    color: var(--amarillo);
+    padding: 0 1px;
+    border-radius: 2px;
+    font-weight: 700;
+  }
+  .result-meta {
+    font-size: 11px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .result-meta-dot {
+    width: 2.5px; height: 2.5px;
+    border-radius: 50%;
+    background: var(--muted-2);
+    flex-shrink: 0;
+  }
+  .result-tag {
+    font-size: 9.5px;
+    padding: 1px 6px;
+    border-radius: 999px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    background: var(--line-2);
+    color: var(--muted);
+  }
+  .result-tag.nuevo { background: var(--azul-soft); color: var(--azul); }
+  .result-tag.conv { background: var(--violeta-soft); color: var(--violeta); }
+  .result-tag.prop { background: #F1ECFF; color: var(--violeta); }
+  .result-tag.cierre { background: var(--coral); color: white; }
+  .result-tag.ganado { background: var(--verde-soft); color: var(--verde); }
+  .result-tag.perdido { background: var(--rojo-soft); color: var(--rojo); }
+
+  .result-shortcut {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    flex-shrink: 0;
+  }
+  .kbd {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-family: var(--mono);
+    font-size: 9.5px;
+    color: var(--muted);
+    font-weight: 500;
+    min-width: 16px;
+    text-align: center;
+  }
+  .result-arrow {
+    color: var(--muted-2);
+    flex-shrink: 0;
+  }
+  .result-item.selected .result-arrow { color: var(--violeta); }
+
+  /* FOOTER del modal */
+  .modal-footer {
+    padding: 10px 18px;
+    border-top: 1px solid var(--line-2);
+    background: var(--panel-2);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .footer-shortcuts {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+  .footer-shortcut {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .footer-brand {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--muted-2);
+    font-size: 10.5px;
+    letter-spacing: 0.04em;
+  }
+  .footer-brand-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: conic-gradient(from 200deg, #FF8AA0 0deg, #FFB088 60deg, #6B8CFF 160deg, #8B6FFF 230deg, #5DC7E0 310deg, #FF8AA0 360deg);
+  }
+
+  /* EMPTY STATE */
+  .empty-state {
+    padding: 48px 24px;
+    text-align: center;
+    color: var(--muted);
+  }
+  .empty-icon {
+    width: 48px; height: 48px;
+    margin: 0 auto 14px;
+    background: var(--panel-2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted-2);
+  }
+  .empty-title {
+    font-family: var(--display);
+    font-weight: 500;
+    font-size: 16px;
+    color: var(--ink);
+    margin-bottom: 6px;
+    letter-spacing: -0.01em;
+  }
+  .empty-title em {
+    font-style: italic;
+    color: var(--violeta);
+    font-weight: 500;
+  }
+  .empty-sub {
+    font-size: 12.5px;
+    color: var(--muted);
+    margin-bottom: 18px;
+    line-height: 1.5;
+  }
+  .empty-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-width: 240px;
+    margin: 0 auto;
+  }
+  .empty-action {
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 12px;
+    color: var(--ink-2);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-align: left;
+  }
+  .empty-action:hover {
+    border-color: var(--ink-2);
+    background: var(--panel);
+  }
+  .empty-action svg {
+    color: var(--violeta);
+    flex-shrink: 0;
+  }
+
+  /* Notas debajo del modal */
+  .state-note {
+    font-size: 12px;
+    color: var(--muted);
+    padding: 0 4px;
+    line-height: 1.5;
+  }
+
+  /* ============================================ */
+  /* RESPONSIVE                                    */
+  /* ============================================ */
+  @media (max-width: 1023px) {
+    .states-grid { grid-template-columns: 1fr; gap: 32px; }
+    .page-container { padding: 32px 20px; }
+    .page-title { font-size: 26px; }
+  }
+
+  @media (max-width: 767px) {
+    .page-container { padding: 24px 16px; }
+    .page-title { font-size: 22px; }
+    .modal-search { padding: 12px 14px; }
+    .search-input { font-size: 14px; }
+    .result-item { padding: 9px 14px; }
+    .modal-footer { padding: 10px 14px; flex-wrap: wrap; }
+    .footer-shortcuts { gap: 10px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page-container">
+
+  <div class="page-eyebrow">Componente · Búsqueda global</div>
+  <h1 class="page-title">Modal de <em>búsqueda</em></h1>
+  <p class="page-sub">
+    Se abre con <span style="font-family: var(--mono); background: var(--panel); border: 1px solid var(--line); padding: 1px 7px; border-radius: 4px; font-size: 12px;">⌘ K</span> desde cualquier pantalla. Busca leads, ejecuta acciones y navega rápido. Acá te muestro los 3 estados principales.
+  </p>
+
+  <div class="states-grid">
+
+    <!-- ============================================ -->
+    <!-- ESTADO 1: INICIAL (sin texto) -->
+    <!-- ============================================ -->
+    <div class="state-card">
+      <div class="state-label">Estado <strong>inicial</strong> · sin escribir</div>
+
+      <div class="modal">
+
+        <div class="modal-search">
+          <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input class="search-input" type="text" placeholder="Buscar leads, acciones, comerciales..." />
+          <span class="search-esc">esc</span>
+        </div>
+
+        <div class="modal-results">
+
+          <div class="results-section">
+            <div class="section-header">
+              Recientes
+              <span class="section-count">últimas visitas</span>
+            </div>
+
+            <div class="result-item selected">
+              <div class="result-icon lead">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              </div>
+              <div class="result-body">
+                <div class="result-title">Constructora Aliaga</div>
+                <div class="result-meta">
+                  <span class="result-tag cierre">Cierre</span>
+                  USD 4.800 · ML
+                </div>
+              </div>
+              <svg class="result-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+            </div>
+
+            <div class="result-item">
+              <div class="result-icon lead">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              </div>
+              <div class="result-body">
+                <div class="result-title">Polo Logístico Sur</div>
+                <div class="result-meta">
+                  <span class="result-tag prop">Propuesta</span>
+                  USD 12.300 · ML
+                </div>
+              </div>
+            </div>
+
+            <div class="result-item">
+              <div class="result-icon lead">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              </div>
+              <div class="result-body">
+                <div class="result-title">Estudio Vázquez & Asoc.</div>
+                <div class="result-meta">
+                  <span class="result-tag conv">Conversación</span>
+                  USD 3.200 · ML
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <div class="results-section">
+            <div class="section-header">
+              Acciones rápidas
+              <span class="section-count">para hacer ya</span>
+            </div>
+
+            <div class="result-item">
+              <div class="result-icon action">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              </div>
+              <div class="result-body">
+                <div class="result-title">Nuevo lead</div>
+                <div class="result-meta">Crear un lead desde cero</div>
+              </div>
+              <div class="result-shortcut">
+                <span class="kbd">N</span>
+              </div>
+            </div>
+
+            <div class="result-item">
+              <div class="result-icon action">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+              </div>
+              <div class="result-body">
+                <div class="result-title">Registrar contacto</div>
+                <div class="result-meta">Agregar una llamada, mail o reunión</div>
+              </div>
+              <div class="result-shortcut">
+                <span class="kbd">R</span>
+              </div>
+            </div>
+
+          </div>
+
+          <div class="results-section">
+            <div class="section-header">
+              Ir a
+              <span class="section-count">páginas</span>
+            </div>
+
+            <div class="result-item">
+              <div class="result-icon page">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 2v4M2 12h4M12 22v-4M22 12h-4"/></svg>
+              </div>
+              <div class="result-body">
+                <div class="result-title">Atender hoy</div>
+                <div class="result-meta">8 cosas pendientes</div>
+              </div>
+              <div class="result-shortcut">
+                <span class="kbd">G</span><span class="kbd">H</span>
+              </div>
+            </div>
+
+            <div class="result-item">
+              <div class="result-icon page">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="6" height="18" rx="1"/><rect x="11" y="3" width="6" height="11" rx="1"/><rect x="19" y="3" width="2" height="14" rx="1"/></svg>
+              </div>
+              <div class="result-body">
+                <div class="result-title">Pipeline</div>
+                <div class="result-meta">Vista kanban del flujo</div>
+              </div>
+              <div class="result-shortcut">
+                <span class="kbd">G</span><span class="kbd">P</span>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+        <div class="modal-footer">
+          <div class="footer-shortcuts">
+            <div class="footer-shortcut"><span class="kbd">↑</span><span class="kbd">↓</span> navegar</div>
+            <div class="footer-shortcut"><span class="kbd">↵</span> ir</div>
+            <div class="footer-shortcut"><span class="kbd">esc</span> cerrar</div>
+          </div>
+          <div class="footer-brand">
+            <span class="footer-brand-dot"></span>
+            js80
+          </div>
+        </div>
+
+      </div>
+
+      <div class="state-note">
+        Al abrir, muestra <strong>los leads visitados recientemente</strong> + acciones rápidas + navegación a páginas. Los recientes los aprende del historial de cada comercial.
+      </div>
+    </div>
+
+
+    <!-- ============================================ -->
+    <!-- ESTADO 2: CON RESULTADOS -->
+    <!-- ============================================ -->
+    <div class="state-card">
+      <div class="state-label">Buscando <strong>"const"</strong></div>
+
+      <div class="modal">
+
+        <div class="modal-search">
+          <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input class="search-input" type="text" value="const" />
+          <span class="search-esc">esc</span>
+        </div>
+
+        <div class="modal-results">
+
+          <div class="results-section">
+            <div class="section-header">
+              Leads
+              <span class="section-count">3 coincidencias</span>
+            </div>
+
+            <div class="result-item selected">
+              <div class="result-icon lead">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              </div>
+              <div class="result-body">
+                <div class="result-title"><mark>Const</mark>ructora Aliaga</div>
+                <div class="result-meta">
+                  <span class="result-tag cierre">Cierre</span>
+                  USD 4.800 · Mariana López
+                </div>
+              </div>
+              <svg class="result-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+            </div>
+
+            <div class="result-item">
+              <div class="result-icon lead">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              </div>
+              <div class="result-body">
+                <div class="result-title"><mark>Const</mark>ructora Litoral</div>
+                <div class="result-meta">
+                  <span class="result-tag perdido">Perdido</span>
+                  USD 9.400 · perdido por precio
+                </div>
+              </div>
+            </div>
+
+            <div class="result-item">
+              <div class="result-icon lead">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              </div>
+              <div class="result-body">
+                <div class="result-title"><mark>Cons</mark>ultora Andrade</div>
+                <div class="result-meta">
+                  <span class="result-tag nuevo">Nuevo</span>
+                  USD 2.800 · Sin asignar
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <div class="results-section">
+            <div class="section-header">
+              Comerciales
+              <span class="section-count">0 coincidencias</span>
+            </div>
+            <div style="padding: 6px 18px; font-size: 11.5px; color: var(--muted-2);">
+              Sin resultados para "const"
+            </div>
+          </div>
+
+          <div class="results-section">
+            <div class="section-header">
+              Notas y contactos
+              <span class="section-count">2 coincidencias</span>
+            </div>
+
+            <div class="result-item">
+              <div class="result-icon" style="background: #FBF3DB; border-color: #EBD9A1; color: var(--amarillo);">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              </div>
+              <div class="result-body">
+                <div class="result-title">Llamada con <mark>Const</mark>ructora Aliaga</div>
+                <div class="result-meta">22/may · "Confirmó la reunión del jueves..."</div>
+              </div>
+            </div>
+
+            <div class="result-item">
+              <div class="result-icon" style="background: #FBF3DB; border-color: #EBD9A1; color: var(--amarillo);">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              </div>
+              <div class="result-body">
+                <div class="result-title">Mail a <mark>Const</mark>ructora Litoral</div>
+                <div class="result-meta">17/may · "Adjuntamos la propuesta revisada..."</div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+        <div class="modal-footer">
+          <div class="footer-shortcuts">
+            <div class="footer-shortcut"><span class="kbd">↑</span><span class="kbd">↓</span> navegar</div>
+            <div class="footer-shortcut"><span class="kbd">↵</span> ir</div>
+            <div class="footer-shortcut"><span class="kbd">esc</span> cerrar</div>
+          </div>
+          <div class="footer-brand">
+            <span class="footer-brand-dot"></span>
+            js80
+          </div>
+        </div>
+
+      </div>
+
+      <div class="state-note">
+        Resultados <strong>agrupados por tipo</strong>: leads, comerciales, notas. El término matcheado aparece resaltado en amarillo. La sección "Comerciales" se muestra incluso cuando está vacía para confirmar que se buscó ahí.
+      </div>
+    </div>
+
+
+    <!-- ============================================ -->
+    <!-- ESTADO 3: SIN RESULTADOS -->
+    <!-- ============================================ -->
+    <div class="state-card">
+      <div class="state-label">Buscando <strong>"xkz"</strong> · sin matches</div>
+
+      <div class="modal">
+
+        <div class="modal-search">
+          <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input class="search-input" type="text" value="xkz" />
+          <span class="search-esc">esc</span>
+        </div>
+
+        <div class="modal-results">
+
+          <div class="empty-state">
+            <div class="empty-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+            </div>
+            <div class="empty-title">No hay <em>resultados</em> para "xkz"</div>
+            <div class="empty-sub">
+              Probá con otra palabra o creá algo nuevo desde acá.
+            </div>
+            <div class="empty-actions">
+              <a class="empty-action" href="#">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Crear un lead nuevo con "xkz"
+              </a>
+              <a class="empty-action" href="#">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                Buscar en notas y contactos
+              </a>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="modal-footer">
+          <div class="footer-shortcuts">
+            <div class="footer-shortcut"><span class="kbd">esc</span> cerrar</div>
+          </div>
+          <div class="footer-brand">
+            <span class="footer-brand-dot"></span>
+            js80
+          </div>
+        </div>
+
+      </div>
+
+      <div class="state-note">
+        Empty state con <strong>salidas accionables</strong>: crear un lead nuevo con el query como nombre, o buscar más profundo en notas. Nunca dejamos al usuario en un dead-end.
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+</body>
+</html>
