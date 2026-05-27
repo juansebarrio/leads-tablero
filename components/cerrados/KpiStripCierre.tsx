@@ -1,4 +1,5 @@
 import { TrendingDown, TrendingUp } from "lucide-react";
+import { KPITooltip } from "@/components/KPITooltip";
 import type { CerradosKpis, MetaMes } from "@/lib/types";
 
 interface Props {
@@ -40,6 +41,7 @@ export function KpiStripCierre({ kpis, meta }: Props) {
           direction: kpis.pct_meta >= 100 ? "up" : "neutral",
           sub: `meta USD ${meta.valor.toLocaleString("es-AR")}`,
         }}
+        tooltip="Cuenta todos los leads cerrados en el mes, sin importar cuándo entraron al pipeline. Es la lectura operativa: cuánto cerraste este mes."
       />
       <KpiCard
         label="Perdidos"
@@ -86,20 +88,27 @@ function KpiCard({
   valorClass,
   accent,
   delta,
+  tooltip,
 }: {
   label: string;
   valor: string;
   valorClass?: string;
   accent: string;
   delta: Delta | null;
+  tooltip?: string;
 }) {
   return (
-    <div className="relative bg-panel border border-line rounded-[10px] px-5 py-[18px] md:p-[20px] md:px-[22px] overflow-hidden">
+    <div className="relative bg-panel border border-line rounded-[10px] px-5 py-[18px] md:p-[20px] md:px-[22px]">
       <span
         aria-hidden
         className="absolute top-0 left-[22px] right-[22px] h-[3px] rounded-b-sm"
         style={{ background: accent }}
       />
+      {tooltip && (
+        <div className="absolute top-2.5 right-3 z-10">
+          <KPITooltip text={tooltip} />
+        </div>
+      )}
       <div className="text-[10.5px] text-muted font-semibold tracking-[0.05em] uppercase mb-2.5">
         {label}
       </div>

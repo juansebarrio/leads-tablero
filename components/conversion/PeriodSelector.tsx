@@ -4,10 +4,12 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useTransition } from "react";
 import type { PeriodoConversion } from "@/lib/types";
 
-const OPCIONES: { value: PeriodoConversion; label: string }[] = [
-  { value: "mes_actual", label: "Este mes" },
-  { value: "mes_anterior", label: "Mes anterior" },
-  { value: "trimestre", label: "Trimestre" },
+// Por ahora solo "Este mes" está implementado. Las otras quedan visuales
+// como "próximamente" para no ofrecer un control que no lleva a nada.
+const OPCIONES: { value: PeriodoConversion; label: string; enabled: boolean }[] = [
+  { value: "mes_actual", label: "Este mes", enabled: true },
+  { value: "mes_anterior", label: "Mes anterior", enabled: false },
+  { value: "trimestre", label: "Trimestre", enabled: false },
 ];
 
 interface PeriodSelectorProps {
@@ -31,6 +33,19 @@ export function PeriodSelector({ current }: PeriodSelectorProps) {
   return (
     <div className="inline-flex bg-panel border border-line rounded-lg p-1 gap-0.5 shrink-0">
       {OPCIONES.map((o) => {
+        if (!o.enabled) {
+          return (
+            <button
+              key={o.value}
+              type="button"
+              disabled
+              title="Próximamente"
+              className="px-3 py-1.5 rounded-md font-medium text-[12.5px] text-muted-2 cursor-not-allowed"
+            >
+              {o.label}
+            </button>
+          );
+        }
         const active = o.value === current;
         return (
           <button

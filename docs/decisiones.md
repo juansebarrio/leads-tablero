@@ -136,6 +136,48 @@
 
 ---
 
+## 2026-05-27 · QA fixes (sprint de coherencia)
+
+**Decisión:** Después del QA report del 27/05, alineamos las métricas para que
+distintas vistas que parecen medir lo mismo den el mismo número, y aclaramos
+con tooltips los casos donde el criterio difiere a propósito.
+
+**Implicancias:**
+
+- **`v_comerciales_metricas`** (nueva migration `20260527120000_equipo_excluir_perdidos.sql`):
+  `leads_activos` y `pipeline_valor` excluyen `perdido`. Antes el filter era
+  `estado <> 'ganado'`, lo que dejaba pasar perdidos. Ahora es
+  `estado in ('nuevo','conversacion','propuesta','cierre')`.
+- **Header del kanban en `/pipeline`** (`components/pipeline/PipelineBoard.tsx`):
+  el conteo "X leads distribuidos" y "USD Y en oportunidades activas" se calculan
+  sobre los leads que efectivamente se muestran en las 5 columnas. No se filtra
+  en la view (`v_leads_kanban` sigue trayendo todos) — lo hacemos en el componente
+  por si en algún momento agregamos una columna extra para perdidos.
+- **`KPITooltip`** como componente reusable (`components/KPITooltip.tsx`): icono
+  `?` chico al lado del valor de un KPI; hover/focus/tap muestra texto explicativo.
+  Sirve para casos donde dos vistas miden cosas parecidas con definiciones
+  distintas y no queremos forzar una sola lectura.
+- **Funnel `/conversion`**: el SQL de `funnel_para_mes` ya cuenta acumulativamente
+  por mes de creación (Option B). El bug del QA report ("122% conversión") era
+  imposible matemáticamente con el SQL actual y se debía a DB deployed stale.
+  Sumamos un chip "X perdidos del mes" en el header del funnel para no dejar
+  los perdidos invisibles (no entran en ninguna barra del embudo).
+- **PeriodSelector de `/conversion`**: "Mes anterior" y "Trimestre" quedan
+  visualmente disabled hasta que se implementen — mismo patrón que ya tenía
+  `PeriodSelectorCerrados`. El parsing del query param sigue en la page por
+  si se vuelve a habilitar.
+- **Botón Exportar del home**: eliminado del DOM (no `disabled`, eso sugiere
+  "ya casi"). Cuando se implemente export real, se vuelve a sumar.
+- **`focus-trap-react`** sumado como dependencia (~8 KB). Envuelve el `<aside>`
+  del `<Drawer>`, así todos los drawers heredan el trap. Sin esta lib el foco
+  se escapaba al fondo cuando se tabulaba dentro de un drawer.
+- **Índices trigram en `leads.nombre` y `contactos.nota`** (nueva migration
+  `20260527120100_search_perf.sql`): `pg_trgm` + GIN para acelerar `ilike '%...%'`
+  cuando el seed crezca. `ilike` ya era case-insensitive (Postgres nativo); el
+  índice resuelve el escenario de búsqueda lenta del QA, no un bug de comparación.
+
+---
+
 ## Cuando agregues una decisión nueva
 
 Plantilla:

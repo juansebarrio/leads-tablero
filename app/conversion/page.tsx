@@ -16,6 +16,7 @@ import {
   getCierreMesData,
   getLeadsParaKanban,
   getPatronesActivosCount,
+  getPerdidosMes,
   getPipelineResumen,
   getTimingData,
   getTrendData,
@@ -59,6 +60,7 @@ export default async function ConversionPage({
       leadsKanban,
       patronesCount,
       cierreMes,
+      perdidos,
     ] = await Promise.all([
       getCurrentUser(),
       getFunnelData(mesesAtras),
@@ -72,6 +74,7 @@ export default async function ConversionPage({
       getLeadsParaKanban(),
       getPatronesActivosCount(),
       getCierreMesData(),
+      getPerdidosMes(),
     ]);
     datos = {
       currentUser,
@@ -86,6 +89,7 @@ export default async function ConversionPage({
       leadsKanban,
       patronesCount,
       cierreMes,
+      perdidos,
     };
   } catch (err) {
     return (
@@ -112,6 +116,7 @@ export default async function ConversionPage({
     leadsKanban,
     patronesCount,
     cierreMes,
+    perdidos,
   } = datos;
 
   // El funnel y los KPIs se sirven del período activo. Para "trimestre"
@@ -219,6 +224,7 @@ export default async function ConversionPage({
           value={`USD ${formatUSDCorto(funnelMostrado.valor_ganado)}`}
           delta={deltaValor}
           sub={`vs USD ${formatUSDCorto(funnelComparacion.valor_ganado)}`}
+          tooltip="Solo cuenta leads creados y ganados dentro del mes actual. Es el ratio de conversión real del lote nuevo. Para ver todos los cierres del mes (incluyendo leads viejos), andá a Cerrados."
         />
       </div>
 
@@ -236,6 +242,15 @@ export default async function ConversionPage({
           <div className="text-[12px] text-muted">
             {funnelMostrado.nuevos_total} leads ingresaron ·{" "}
             {funnelMostrado.ganados} cerraron
+            {perdidos.length > 0 && (
+              <>
+                {" · "}
+                <span className="text-rojo">
+                  {perdidos.length}{" "}
+                  {perdidos.length === 1 ? "perdido" : "perdidos"} del mes
+                </span>
+              </>
+            )}
           </div>
         </div>
         <Funnel

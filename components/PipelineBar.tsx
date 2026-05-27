@@ -91,10 +91,13 @@ export function PipelineBar({ data }: PipelineBarProps) {
         {filas.map((f) => (
           <div key={f.estado} className="flex flex-col gap-1 min-w-0">
             <div
-              className="text-[11px] text-muted font-medium truncate"
+              className="text-[11px] text-muted font-medium truncate flex items-baseline gap-1"
               title={NOMBRE_ESTADO[f.estado]}
             >
-              {NOMBRE_ESTADO[f.estado]}
+              <span>{NOMBRE_ESTADO[f.estado]}</span>
+              {f.estado === "ganado" && (
+                <span className="text-[10.5px] text-muted-2">del mes</span>
+              )}
             </div>
             <div className="flex items-baseline gap-1.5">
               <span className="font-display font-semibold text-[18px] text-ink leading-none -tracking-[0.01em]">
@@ -118,6 +121,9 @@ export function PipelineBar({ data }: PipelineBarProps) {
           >
             <span className="text-[12.5px] text-muted font-medium">
               {NOMBRE_ESTADO[f.estado]}
+              {f.estado === "ganado" && (
+                <span className="text-[10.5px] text-muted-2 ml-1.5">del mes</span>
+              )}
             </span>
             <div className="flex items-baseline gap-2.5">
               <span className="font-display font-semibold text-base text-ink leading-none -tracking-[0.01em]">

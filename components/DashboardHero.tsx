@@ -1,5 +1,4 @@
 import { Plus } from "lucide-react";
-import { ExportarTrigger } from "@/components/ExportarTrigger";
 import { formatEyebrowFecha, saludoSegunHora } from "@/lib/format";
 
 interface DashboardHeroProps {
@@ -38,21 +37,19 @@ export function DashboardHero({
           .
         </h1>
         <p className="text-[13.5px] text-muted mt-2 max-w-[480px] text-pretty">
-          Tenés{" "}
           <strong className="text-ink-2 font-semibold">
             {cantidadFrios} leads
           </strong>{" "}
-          que pidieron seguimiento y{" "}
+          piden tu atención hoy y{" "}
           <strong className="text-ink-2 font-semibold">
             {cantidadReuniones} reuniones
           </strong>{" "}
-          en agenda. Empezamos por lo que se enfría.
+          en agenda.
         </p>
       </div>
 
       <div className="flex items-center gap-2.5 flex-shrink-0 md:mt-6 flex-wrap">
         {agendaTrigger}
-        <ExportarTrigger />
         {nuevoLeadTrigger ?? (
           <button
             type="button"
