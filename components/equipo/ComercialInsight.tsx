@@ -1,3 +1,5 @@
+"use client";
+
 import { AlertCircle, Check } from "lucide-react";
 
 export type InsightTipo = "good" | "warn" | "danger" | "neutral";
