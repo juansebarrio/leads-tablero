@@ -10,11 +10,15 @@ import type {
   EventoAgenda,
   FunnelData,
   Lead,
+  LeadAfectado,
   LeadDetalle,
   LeadFrio,
   LeadKanban,
   OportunidadDia,
+  Patron,
+  PatronesStats,
   PatronIa,
+  PatronTipo,
   PipelineEstado,
   TimingItem,
   TrendPoint,
@@ -211,14 +215,167 @@ export async function getTrendData(meses = 3): Promise<TrendPoint[]> {
   return (data ?? []) as TrendPoint[];
 }
 
-// El primer patrón detectado (la vista devuelve 0 o 1 fila gracias al HAVING).
+// Compat con AIInsight (banner del tablero): busca el primer patrón
+// operativo activo de tipo "leads_sin_asignar" y lo mapea a la shape
+// vieja PatronIa. Si no existe, el banner no se muestra.
 export async function getPrimerPatronIa(): Promise<PatronIa | null> {
   const supabase = await createClient();
   const { data, error } = await supabase
-    .from("v_patrones_ia")
-    .select("*")
+    .from("patrones")
+    .select("metadata, detectado_en, leads_afectados")
+    .like("clave_unica", "operativo:leads_sin_asignar:%")
+    .is("resuelto_en", null)
+    .order("detectado_en", { ascending: false })
     .limit(1)
     .maybeSingle();
   if (error) throw error;
-  return (data ?? null) as PatronIa | null;
+  if (!data) return null;
+  const meta = (data.metadata ?? {}) as {
+    desde?: string;
+    hasta?: string;
+  };
+  const ids = (data.leads_afectados ?? []) as string[];
+  return {
+    patron: "asignacion_pendiente",
+    cantidad: ids.length,
+    lead_ids: ids,
+    desde: meta.desde ?? (data.detectado_en as string),
+    hasta: meta.hasta ?? (data.detectado_en as string),
+  };
 }
+
+// Pantalla /patrones · listado completo, activos primero (recientes arriba),
+// resueltos al final.
+export async function getPatrones(): Promise<Patron[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("patrones")
+    .select("*, comerciales:resuelto_por(nombre)")
+    .order("resuelto_en", { ascending: true, nullsFirst: true })
+    .order("detectado_en", { ascending: false });
+  if (error) throw error;
+  return (data ?? []).map((row) => {
+    const { comerciales, ...rest } = row as Patron & {
+      comerciales: { nombre: string } | null;
+    };
+    return {
+      ...rest,
+      resuelto_por_nombre: comerciales?.nombre ?? null,
+    };
+  });
+}
+
+// Stats agregados del header de /patrones.
+export async function getPatronesStats(): Promise<PatronesStats> {
+  const supabase = await createClient();
+  // Detectados este mes (no resueltos), resueltos en últimos 7 días,
+  // valor_en_juego sumado entre activos.
+  const inicioMes = new Date();
+  inicioMes.setDate(1);
+  inicioMes.setHours(0, 0, 0, 0);
+  const hace7 = new Date();
+  hace7.setDate(hace7.getDate() - 7);
+
+  const [activosRes, resueltosRes] = await Promise.all([
+    supabase
+      .from("patrones")
+      .select("valor_en_juego")
+      .is("resuelto_en", null)
+      .gte("detectado_en", inicioMes.toISOString()),
+    supabase
+      .from("patrones")
+      .select("id", { count: "exact", head: true })
+      .gte("resuelto_en", hace7.toISOString()),
+  ]);
+
+  if (activosRes.error) throw activosRes.error;
+  if (resueltosRes.error) throw resueltosRes.error;
+
+  const detectados = activosRes.data?.length ?? 0;
+  const valor = (activosRes.data ?? []).reduce(
+    (acc, p) => acc + (Number((p as { valor_en_juego: number }).valor_en_juego) || 0),
+    0,
+  );
+
+  return {
+    detectados_mes: detectados,
+    resueltos_semana: resueltosRes.count ?? 0,
+    valor_en_juego: valor,
+  };
+}
+
+// Sidebar count: patrones no resueltos.
+export async function getPatronesActivosCount(): Promise<number> {
+  const supabase = await createClient();
+  const { count, error } = await supabase
+    .from("patrones")
+    .select("id", { count: "exact", head: true })
+    .is("resuelto_en", null);
+  if (error) throw error;
+  return count ?? 0;
+}
+
+// Para cada patrón, mostramos las cards de leads afectados. Levanta los
+// datos necesarios en una sola query con join a comerciales.
+export async function getLeadsAfectados(
+  ids: string[],
+): Promise<LeadAfectado[]> {
+  if (ids.length === 0) return [];
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("leads")
+    .select(
+      "id, nombre, valor_estimado, origen, estado, fecha_creacion, fecha_ultimo_contacto, comerciales:responsable_id(iniciales, avatar_gradient)",
+    )
+    .in("id", ids);
+  if (error) throw error;
+  type Row = {
+    id: string;
+    nombre: string;
+    valor_estimado: number;
+    origen: string;
+    estado: string;
+    fecha_creacion: string;
+    fecha_ultimo_contacto: string | null;
+    // Supabase puede devolver el join como objeto o como array de 0/1
+    // elementos según cómo infiera la relación. Normalizamos abajo.
+    comerciales:
+      | { iniciales: string; avatar_gradient: string }
+      | { iniciales: string; avatar_gradient: string }[]
+      | null;
+  };
+  return ((data ?? []) as unknown as Row[]).map((row) => {
+    const com = Array.isArray(row.comerciales)
+      ? (row.comerciales[0] ?? null)
+      : row.comerciales;
+    const diasUlt = row.fecha_ultimo_contacto
+      ? Math.floor(
+          (Date.now() - new Date(row.fecha_ultimo_contacto).getTime()) /
+            (1000 * 60 * 60 * 24),
+        )
+      : Math.floor(
+          (Date.now() - new Date(row.fecha_creacion).getTime()) /
+            (1000 * 60 * 60 * 24),
+        );
+    const meta = capitalize(row.estado) + " · " + diasUlt + " días sin tocar";
+    return {
+      id: row.id,
+      nombre: row.nombre,
+      meta,
+      valor: row.valor_estimado,
+      comercial: com
+        ? {
+            iniciales: com.iniciales,
+            avatar_gradient: com.avatar_gradient,
+          }
+        : null,
+    };
+  });
+}
+
+function capitalize(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+// Re-export el tipo PatronTipo para evitar imports cruzados en el caller.
+export type { PatronTipo };

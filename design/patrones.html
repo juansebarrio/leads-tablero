@@ -1,0 +1,891 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>JS80 · Patrones</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F7F6F2;
+    --panel: #FFFFFF;
+    --panel-2: #FBFAF6;
+    --ink: #0E0E12;
+    --ink-2: #2A2A33;
+    --muted: #6B6B75;
+    --muted-2: #9A9AA3;
+    --line: #E8E6DE;
+    --line-2: #F0EEE6;
+    --azul: #6B8CFF;
+    --azul-soft: #EDF1FF;
+    --violeta: #8B6FFF;
+    --violeta-soft: #F1ECFF;
+    --turquesa: #5DC7E0;
+    --turquesa-soft: #E5F4F9;
+    --coral: #FF8AA0;
+    --rojo: #C8362E;
+    --rojo-soft: #FBEAE7;
+    --amarillo: #B8860B;
+    --amarillo-soft: #FBF3DB;
+    --verde: #3E8A5A;
+    --verde-soft: #E6F1EB;
+    --display: 'Fraunces', Georgia, serif;
+    --body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    font-family: var(--body);
+    color: var(--ink);
+    background: var(--bg);
+    font-size: 13px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  svg { display: block; }
+
+  .app {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    min-height: 100vh;
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    background: var(--panel);
+    border-right: 1px solid var(--line);
+    padding: 22px 18px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+  }
+  .brand-block { display: flex; align-items: center; gap: 10px; padding-bottom: 18px; border-bottom: 1px solid var(--line); }
+  .nucleus {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    background: conic-gradient(from 200deg, #FF8AA0 0deg, #FFB088 60deg, #6B8CFF 160deg, #8B6FFF 230deg, #5DC7E0 310deg, #FF8AA0 360deg);
+    flex-shrink: 0;
+  }
+  .brand-name { font-family: var(--display); font-weight: 600; font-size: 17px; letter-spacing: -0.01em; line-height: 1; }
+  .brand-sub { font-size: 10.5px; color: var(--muted); margin-top: 3px; }
+  .nav-title { font-size: 10.5px; font-weight: 600; color: var(--muted-2); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 6px; padding: 0 6px; }
+  .nav-item { display: flex; align-items: center; gap: 9px; padding: 6px 8px; margin: 1px 0; border-radius: 6px; font-size: 12.5px; color: var(--ink-2); cursor: pointer; }
+  .nav-item .nav-icon { width: 14px; height: 14px; color: var(--muted); flex-shrink: 0; }
+  .nav-item:hover { background: var(--line-2); }
+  .nav-item.active { background: var(--ink); color: white; font-weight: 500; }
+  .nav-item.active .nav-icon { color: white; }
+  .nav-item.active .nav-count { background: rgba(255,255,255,0.16); color: white; }
+  .nav-count { margin-left: auto; font-size: 10.5px; background: var(--line-2); color: var(--muted); padding: 1px 6px; border-radius: 999px; font-weight: 500; }
+  .nav-count.alert { background: var(--rojo-soft); color: var(--rojo); }
+  .sidebar-foot { margin-top: auto; padding-top: 14px; border-top: 1px solid var(--line); display: flex; align-items: center; gap: 10px; }
+  .user-mini-avatar { width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #8B6FFF, #5DC7E0); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 11px; }
+  .user-mini-name { font-weight: 600; color: var(--ink); font-size: 12px; }
+  .user-mini-role { color: var(--muted); font-size: 10.5px; }
+
+  /* MAIN */
+  .main { padding: 28px 32px 60px; min-width: 0; }
+
+  /* HEADER */
+  .page-header { margin-bottom: 24px; }
+  .page-eyebrow {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .page-title {
+    font-family: var(--display);
+    font-weight: 500;
+    font-variation-settings: "SOFT" 100, "opsz" 144;
+    font-size: 36px;
+    line-height: 1.05;
+    letter-spacing: -0.025em;
+    color: var(--ink);
+    margin-bottom: 10px;
+  }
+  .page-title em {
+    font-style: italic;
+    color: var(--violeta);
+    font-weight: 500;
+  }
+  .page-sub {
+    font-size: 13.5px;
+    color: var(--muted);
+    max-width: 640px;
+  }
+  .page-sub strong { color: var(--ink-2); font-weight: 600; }
+
+  /* BANDA DE MÉTRICAS */
+  .stats-strip {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 22px;
+  }
+  .stat-card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 18px 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .stat-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 20px;
+    right: 20px;
+    height: 3px;
+    border-radius: 0 0 3px 3px;
+  }
+  .stat-card.detectados::before { background: var(--violeta); }
+  .stat-card.resueltos::before { background: var(--verde); }
+  .stat-card.juego::before { background: var(--amarillo); }
+  .stat-label {
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .stat-value {
+    font-family: var(--display);
+    font-weight: 600;
+    font-variation-settings: "opsz" 144;
+    font-size: 26px;
+    letter-spacing: -0.018em;
+    line-height: 1;
+    color: var(--ink);
+    margin-bottom: 4px;
+  }
+  .stat-value strong { color: var(--violeta); font-weight: 600; }
+  .stat-card.resueltos .stat-value strong { color: var(--verde); }
+  .stat-card.juego .stat-value strong { color: var(--amarillo); }
+  .stat-sub {
+    font-size: 11.5px;
+    color: var(--muted);
+  }
+
+  /* FILTROS */
+  .filters-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+  }
+  .filters-label {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    font-weight: 600;
+    margin-right: 4px;
+  }
+  .filter-chip {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 7px 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--ink-2);
+    font-weight: 500;
+  }
+  .filter-chip:hover { border-color: var(--ink-2); }
+  .filter-chip.active {
+    background: var(--ink);
+    color: white;
+    border-color: var(--ink);
+  }
+  .filter-chip-count {
+    font-size: 10.5px;
+    background: var(--line-2);
+    color: var(--muted);
+    padding: 1px 6px;
+    border-radius: 999px;
+    font-weight: 600;
+  }
+  .filter-chip.active .filter-chip-count {
+    background: rgba(255,255,255,0.15);
+    color: white;
+  }
+
+  /* PATRONES */
+  .patrones-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .patron {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+    transition: all 0.18s;
+  }
+  .patron:hover {
+    border-color: var(--ink-2);
+    box-shadow: 0 8px 24px rgba(14,14,18,0.04);
+  }
+  .patron::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 3px;
+  }
+  .patron.operativo::before { background: var(--rojo); }
+  .patron.atasco::before { background: var(--amarillo); }
+  .patron.oportunidad::before { background: var(--verde); }
+  .patron.tendencia::before { background: var(--azul); }
+  .patron.sugerencia::before { background: var(--violeta); }
+  .patron.resuelto { opacity: 0.65; }
+  .patron.resuelto::before { background: var(--verde); }
+
+  /* Header del patrón */
+  .patron-header {
+    padding: 18px 22px;
+    display: grid;
+    grid-template-columns: 40px 1fr auto;
+    gap: 14px;
+    align-items: flex-start;
+  }
+  .patron-icon {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .patron.operativo .patron-icon { background: var(--rojo-soft); color: var(--rojo); }
+  .patron.atasco .patron-icon { background: var(--amarillo-soft); color: var(--amarillo); }
+  .patron.oportunidad .patron-icon { background: var(--verde-soft); color: var(--verde); }
+  .patron.tendencia .patron-icon { background: var(--azul-soft); color: var(--azul); }
+  .patron.sugerencia .patron-icon { background: var(--violeta-soft); color: var(--violeta); }
+  .patron.resuelto .patron-icon { background: var(--verde-soft); color: var(--verde); }
+
+  .patron-info { min-width: 0; }
+  .patron-tags {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 6px;
+  }
+  .patron-type {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 999px;
+  }
+  .patron.operativo .patron-type { background: var(--rojo-soft); color: var(--rojo); }
+  .patron.atasco .patron-type { background: var(--amarillo-soft); color: var(--amarillo); }
+  .patron.oportunidad .patron-type { background: var(--verde-soft); color: var(--verde); }
+  .patron.tendencia .patron-type { background: var(--azul-soft); color: var(--azul); }
+  .patron.sugerencia .patron-type { background: var(--violeta-soft); color: var(--violeta); }
+  .patron-detected {
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .resuelto-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--verde-soft);
+    color: var(--verde);
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .patron-title {
+    font-family: var(--display);
+    font-weight: 500;
+    font-variation-settings: "SOFT" 100, "opsz" 144;
+    font-size: 17px;
+    line-height: 1.25;
+    letter-spacing: -0.015em;
+    color: var(--ink);
+    margin-bottom: 5px;
+  }
+  .patron.resuelto .patron-title { text-decoration: line-through; text-decoration-color: var(--muted-2); }
+  .patron-title strong { font-weight: 600; }
+  .patron-explainer {
+    font-size: 13px;
+    color: var(--ink-2);
+    line-height: 1.5;
+  }
+  .patron-explainer strong { font-weight: 600; }
+
+  .patron-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: flex-end;
+    flex-shrink: 0;
+  }
+  .btn {
+    border: 1px solid var(--line);
+    background: var(--panel);
+    color: var(--ink-2);
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-family: var(--body);
+    font-weight: 500;
+    font-size: 12.5px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+  }
+  .btn:hover { border-color: var(--ink-2); background: var(--panel-2); }
+  .btn.primary {
+    background: var(--ink);
+    color: white;
+    border-color: var(--ink);
+  }
+  .btn.primary:hover {
+    background: var(--violeta);
+    border-color: var(--violeta);
+  }
+  .btn.text-only {
+    background: transparent;
+    border-color: transparent;
+    color: var(--muted);
+    font-size: 11.5px;
+    padding: 4px 8px;
+  }
+  .btn.text-only:hover {
+    color: var(--ink-2);
+    background: transparent;
+  }
+
+  /* Leads afectados (lista expandible) */
+  .patron-affected {
+    border-top: 1px solid var(--line-2);
+    padding: 16px 22px 18px;
+    background: var(--panel-2);
+  }
+  .affected-label {
+    font-size: 10.5px;
+    color: var(--muted);
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .affected-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .affected-item {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 10px 14px;
+    display: grid;
+    grid-template-columns: 1fr auto auto auto;
+    gap: 12px;
+    align-items: center;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.12s;
+  }
+  .affected-item:hover {
+    border-color: var(--ink-2);
+    transform: translateX(2px);
+  }
+  .affected-name {
+    font-weight: 600;
+    color: var(--ink);
+    font-size: 13px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .affected-meta {
+    font-size: 11.5px;
+    color: var(--muted);
+  }
+  .affected-value {
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 13.5px;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+  }
+  .affected-avatar {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: white;
+    font-size: 9px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .av-ml { background: linear-gradient(135deg, #8B6FFF, #5DC7E0); }
+  .av-dt { background: linear-gradient(135deg, #FF8AA0, #FFB088); }
+  .av-sm { background: linear-gradient(135deg, #6B8CFF, #8B6FFF); }
+  .av-na { background: var(--line); color: var(--muted); border: 1px dashed var(--muted-2); }
+
+  /* GRAFICO MINI (para tendencias) */
+  .mini-chart {
+    background: var(--panel-2);
+    border: 1px solid var(--line-2);
+    border-radius: 8px;
+    padding: 14px;
+    margin: 6px 0 2px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    align-items: center;
+  }
+  .mini-chart-info {
+    font-size: 12px;
+    color: var(--ink-2);
+    line-height: 1.5;
+  }
+  .mini-chart-info strong { font-weight: 700; }
+  .mini-chart-info .up { color: var(--verde); font-weight: 700; }
+  .mini-chart-info .down { color: var(--rojo); font-weight: 700; }
+
+  /* ============================================ */
+  /* RESPONSIVE                                    */
+  /* ============================================ */
+  .topbar-mobile {
+    display: none;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: var(--panel);
+    border-bottom: 1px solid var(--line);
+    padding: 12px 16px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .tb-brand { display: flex; align-items: center; gap: 8px; }
+  .tb-brand-name { font-family: var(--display); font-weight: 600; font-size: 15px; letter-spacing: -0.01em; }
+  .tb-btn {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    width: 38px; height: 38px;
+    border-radius: 6px;
+    display: inline-flex; align-items: center; justify-content: center;
+    color: var(--ink-2);
+    cursor: pointer;
+    position: relative;
+  }
+  .backdrop { display: none; position: fixed; inset: 0; background: rgba(14, 14, 18, 0.4); z-index: 60; }
+  .backdrop.active { display: block; }
+
+  @media (max-width: 1023px) {
+    .app { grid-template-columns: 1fr; }
+    .sidebar {
+      position: fixed; top: 0; left: 0;
+      width: 260px; height: 100vh; z-index: 70;
+      transform: translateX(-100%);
+      transition: transform 0.25s ease;
+      box-shadow: 8px 0 32px rgba(14,14,18,0.08);
+    }
+    .sidebar.open { transform: translateX(0); }
+    .topbar-mobile { display: flex; }
+    .main { padding: 22px 24px 60px; }
+    .stats-strip { grid-template-columns: 1fr; gap: 10px; }
+  }
+
+  @media (max-width: 767px) {
+    .main { padding: 16px 16px 60px; }
+    .page-title { font-size: 26px; }
+    .filter-chip { padding: 6px 10px; font-size: 11.5px; }
+    .filters-bar { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 6px; }
+    .filters-bar::-webkit-scrollbar { height: 4px; }
+    .filters-bar::-webkit-scrollbar-thumb { background: var(--line); border-radius: 2px; }
+
+    .patron-header {
+      grid-template-columns: 36px 1fr;
+      padding: 16px;
+    }
+    .patron-actions {
+      grid-column: 1 / -1;
+      flex-direction: row;
+      width: 100%;
+    }
+    .patron-actions .btn {
+      flex: 1;
+      justify-content: center;
+      padding: 9px;
+    }
+    .patron-actions .btn.text-only { flex: 0 0 auto; }
+    .patron-title { font-size: 15.5px; }
+    .patron-explainer { font-size: 12.5px; }
+    .patron-icon { width: 36px; height: 36px; }
+
+    .patron-affected { padding: 14px 16px; }
+    .affected-item {
+      grid-template-columns: 1fr auto;
+      gap: 6px;
+    }
+    .affected-meta { display: none; }
+    .affected-value { grid-column: 2; grid-row: 1; }
+    .affected-avatar { grid-column: 2; grid-row: 2; justify-self: end; }
+
+    .mini-chart { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar-mobile">
+  <button class="tb-btn" id="open-sidebar" aria-label="Abrir menú">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+  </button>
+  <div class="tb-brand">
+    <div class="nucleus" style="width:24px;height:24px"></div>
+    <span class="tb-brand-name">js80</span>
+  </div>
+  <button class="tb-btn" aria-label="Ver agenda">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+  </button>
+</header>
+
+<div class="backdrop" id="backdrop"></div>
+
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="brand-block">
+      <div class="nucleus"></div>
+      <div>
+        <div class="brand-name">js80</div>
+        <div class="brand-sub">Tablero de leads</div>
+      </div>
+    </div>
+
+    <div>
+      <div class="nav-title">Hoy</div>
+      <div class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 2v4M2 12h4M12 22v-4M22 12h-4"/></svg>
+        Atender hoy
+        <span class="nav-count alert">8</span>
+      </div>
+      <div class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+        Agenda
+        <span class="nav-count">4</span>
+      </div>
+    </div>
+
+    <div>
+      <div class="nav-title">Pipeline</div>
+      <div class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="6" height="18" rx="1"/><rect x="11" y="3" width="6" height="11" rx="1"/><rect x="19" y="3" width="2" height="14" rx="1"/></svg>
+        Pipeline
+      </div>
+      <div class="nav-item">Leads nuevos<span class="nav-count">6</span></div>
+      <div class="nav-item">En conversación<span class="nav-count">8</span></div>
+      <div class="nav-item">Propuestas<span class="nav-count">7</span></div>
+      <div class="nav-item">Cerrados<span class="nav-count">—</span></div>
+    </div>
+
+    <div>
+      <div class="nav-title">Inteligencia</div>
+      <div class="nav-item active">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71L12 2z"/></svg>
+        Patrones
+        <span class="nav-count">5</span>
+      </div>
+      <div class="nav-item">Conversión</div>
+      <div class="nav-item">Equipo</div>
+    </div>
+
+    <div class="sidebar-foot">
+      <div class="user-mini-avatar">ML</div>
+      <div>
+        <div class="user-mini-name">Mariana López</div>
+        <div class="user-mini-role">Comercial</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- Header -->
+    <div class="page-header">
+      <div class="page-eyebrow">Inteligencia · Mayo 2026</div>
+      <h1 class="page-title">Lo que estamos <em>viendo</em>.</h1>
+      <div class="page-sub">
+        El sistema cruza datos del pipeline, del equipo y del histórico para detectar cosas que la vista de día a día no muestra.
+      </div>
+    </div>
+
+    <!-- Banda de stats -->
+    <div class="stats-strip">
+      <div class="stat-card detectados">
+        <div class="stat-label">Detectados</div>
+        <div class="stat-value"><strong>5</strong> patrones</div>
+        <div class="stat-sub">Activos este mes</div>
+      </div>
+      <div class="stat-card resueltos">
+        <div class="stat-label">Resueltos</div>
+        <div class="stat-value"><strong>3</strong> esta semana</div>
+        <div class="stat-sub">Atendiste los importantes</div>
+      </div>
+      <div class="stat-card juego">
+        <div class="stat-label">Valor en juego</div>
+        <div class="stat-value"><strong>USD 28.700</strong></div>
+        <div class="stat-sub">Suma de leads afectados</div>
+      </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="filters-bar">
+      <span class="filters-label">Filtrar</span>
+      <button class="filter-chip active">Todos <span class="filter-chip-count">5</span></button>
+      <button class="filter-chip">Operativos <span class="filter-chip-count">1</span></button>
+      <button class="filter-chip">Atascos <span class="filter-chip-count">1</span></button>
+      <button class="filter-chip">Oportunidades <span class="filter-chip-count">1</span></button>
+      <button class="filter-chip">Tendencias <span class="filter-chip-count">1</span></button>
+      <button class="filter-chip">Sugerencias <span class="filter-chip-count">1</span></button>
+    </div>
+
+    <!-- Lista de patrones -->
+    <div class="patrones-list">
+
+      <!-- PATRÓN 1: OPERATIVO (4 leads sin asignar) -->
+      <article class="patron operativo">
+        <div class="patron-header">
+          <div class="patron-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          </div>
+          <div class="patron-info">
+            <div class="patron-tags">
+              <span class="patron-type">Operativo</span>
+              <span class="patron-detected">detectado hace 2 días</span>
+            </div>
+            <div class="patron-title">4 leads del formulario web siguen <strong>sin asignar comercial</strong></div>
+            <div class="patron-explainer">
+              Entraron entre el <strong>19 y 23 de mayo</strong>. El cuello no es de seguimiento, es de <strong>asignación automática</strong>. Si tuvieran responsable hoy, ya estarían en conversación.
+            </div>
+          </div>
+          <div class="patron-actions">
+            <button class="btn primary">Revisar regla</button>
+            <button class="btn text-only">Marcar resuelto</button>
+          </div>
+        </div>
+
+        <div class="patron-affected">
+          <div class="affected-label">Leads afectados · USD 16.400</div>
+          <div class="affected-list">
+            <a class="affected-item" href="#">
+              <div class="affected-name">Agencia Mercurio</div>
+              <div class="affected-meta">Formulario · 6 días</div>
+              <div class="affected-value">USD 5.400</div>
+              <div class="affected-avatar av-na">?</div>
+            </a>
+            <a class="affected-item" href="#">
+              <div class="affected-name">Bar La Castellana</div>
+              <div class="affected-meta">Formulario · 5 días</div>
+              <div class="affected-value">USD 2.400</div>
+              <div class="affected-avatar av-na">?</div>
+            </a>
+            <a class="affected-item" href="#">
+              <div class="affected-name">Inmobiliaria Faro</div>
+              <div class="affected-meta">Formulario · 4 días</div>
+              <div class="affected-value">USD 5.800</div>
+              <div class="affected-avatar av-na">?</div>
+            </a>
+            <a class="affected-item" href="#">
+              <div class="affected-name">Consultora Andrade</div>
+              <div class="affected-meta">Formulario · 3 días</div>
+              <div class="affected-value">USD 2.800</div>
+              <div class="affected-avatar av-na">?</div>
+            </a>
+          </div>
+        </div>
+      </article>
+
+      <!-- PATRÓN 2: ATASCO (leads atascados en propuesta) -->
+      <article class="patron atasco">
+        <div class="patron-header">
+          <div class="patron-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <div class="patron-info">
+            <div class="patron-tags">
+              <span class="patron-type">Atasco</span>
+              <span class="patron-detected">detectado hoy</span>
+            </div>
+            <div class="patron-title">3 leads atascados hace <strong>+14 días en Propuesta</strong></div>
+            <div class="patron-explainer">
+              Cotización enviada pero sin movimiento. <strong>Promedio normal en esa etapa: 6 días.</strong> Vale un seguimiento con valor agregado (caso de éxito, descuento, FAQ).
+            </div>
+          </div>
+          <div class="patron-actions">
+            <button class="btn primary">Ver en pipeline</button>
+            <button class="btn text-only">Marcar resuelto</button>
+          </div>
+        </div>
+
+        <div class="patron-affected">
+          <div class="affected-label">Leads atascados · USD 26.500</div>
+          <div class="affected-list">
+            <a class="affected-item" href="#">
+              <div class="affected-name">Constructora Litoral</div>
+              <div class="affected-meta">Propuesta · 18 días sin tocar</div>
+              <div class="affected-value">USD 9.400</div>
+              <div class="affected-avatar av-dt">DT</div>
+            </a>
+            <a class="affected-item" href="#">
+              <div class="affected-name">Hostería Patagonia</div>
+              <div class="affected-meta">Propuesta · 15 días sin tocar</div>
+              <div class="affected-value">USD 8.200</div>
+              <div class="affected-avatar av-sm">SM</div>
+            </a>
+            <a class="affected-item" href="#">
+              <div class="affected-name">Polo Logístico Sur</div>
+              <div class="affected-meta">Propuesta · 14 días sin tocar</div>
+              <div class="affected-value">USD 8.900</div>
+              <div class="affected-avatar av-ml">ML</div>
+            </a>
+          </div>
+        </div>
+      </article>
+
+      <!-- PATRÓN 3: OPORTUNIDAD (mejor horario de cierre) -->
+      <article class="patron oportunidad">
+        <div class="patron-header">
+          <div class="patron-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+          </div>
+          <div class="patron-info">
+            <div class="patron-tags">
+              <span class="patron-type">Oportunidad</span>
+              <span class="patron-detected">basado en últimos 90 días</span>
+            </div>
+            <div class="patron-title">Tu ratio de cierre los <strong>martes a la mañana</strong> es 2x el promedio</div>
+            <div class="patron-explainer">
+              En los últimos 90 días, las reuniones agendadas <strong>martes entre 9:00 y 12:00</strong> tienen <strong>32% de tasa de cierre</strong>, contra el 14% promedio. Considerá reservar esa franja para tus reuniones decisivas.
+            </div>
+            <div class="mini-chart">
+              <div class="mini-chart-info">
+                <div style="margin-bottom: 4px;"><strong>Martes 9–12 hs:</strong> <span class="up">32% cierre</span></div>
+                <div><strong>Promedio general:</strong> 14% cierre</div>
+              </div>
+              <svg viewBox="0 0 200 60" preserveAspectRatio="none" style="width: 100%; height: 60px;">
+                <!-- Promedio (línea inferior, gris) -->
+                <line x1="0" y1="45" x2="200" y2="45" stroke="#9A9AA3" stroke-width="1" stroke-dasharray="3,3"/>
+                <text x="195" y="42" font-family="Inter" font-size="9" fill="#9A9AA3" text-anchor="end">14%</text>
+                <!-- Pico martes -->
+                <path d="M 10 50 L 50 48 L 90 15 L 130 45 L 170 50 L 190 50" stroke="#3E8A5A" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+                <circle cx="90" cy="15" r="4" fill="#3E8A5A"/>
+                <text x="90" y="10" font-family="Inter" font-size="10" fill="#3E8A5A" font-weight="700" text-anchor="middle">32%</text>
+                <!-- Labels eje X -->
+                <text x="10" y="58" font-family="Inter" font-size="8" fill="#9A9AA3">L</text>
+                <text x="50" y="58" font-family="Inter" font-size="8" fill="#9A9AA3">M</text>
+                <text x="90" y="58" font-family="Inter" font-size="8" fill="#3E8A5A" font-weight="700">Mar</text>
+                <text x="130" y="58" font-family="Inter" font-size="8" fill="#9A9AA3">J</text>
+                <text x="170" y="58" font-family="Inter" font-size="8" fill="#9A9AA3">V</text>
+              </svg>
+            </div>
+          </div>
+          <div class="patron-actions">
+            <button class="btn primary">Ver detalle</button>
+            <button class="btn text-only">Marcar resuelto</button>
+          </div>
+        </div>
+      </article>
+
+      <!-- PATRÓN 4: TENDENCIA (creaste más leads, ratio cayó) - RESUELTO -->
+      <article class="patron tendencia resuelto">
+        <div class="patron-header">
+          <div class="patron-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+          </div>
+          <div class="patron-info">
+            <div class="patron-tags">
+              <span class="patron-type">Tendencia</span>
+              <span class="resuelto-badge">
+                <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m5 12 5 5 9-11"/></svg>
+                Resuelto
+              </span>
+              <span class="patron-detected">resuelto hace 5 días por Mariana</span>
+            </div>
+            <div class="patron-title">Creaste <strong>+18% leads</strong> este mes pero <strong>ratio de cierre cayó</strong></div>
+            <div class="patron-explainer">
+              79 leads creados vs 67 de abril, pero el ratio cayó de 13.4% a 14% (+0.6 pp solamente). El cuello está en Propuesta → Cierre. <strong>Ya lo revisaste y ajustaste el guión de propuesta.</strong>
+            </div>
+          </div>
+          <div class="patron-actions">
+            <button class="btn">Ver conversión</button>
+          </div>
+        </div>
+      </article>
+
+      <!-- PATRÓN 5: SUGERENCIA (Sofía tiene capacidad) -->
+      <article class="patron sugerencia">
+        <div class="patron-header">
+          <div class="patron-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9c1.4 0 2.73.32 3.91.89"/></svg>
+          </div>
+          <div class="patron-info">
+            <div class="patron-tags">
+              <span class="patron-type">Sugerencia</span>
+              <span class="patron-detected">recomendación de IA</span>
+            </div>
+            <div class="patron-title"><strong>Sofía tiene capacidad</strong> y mejor ratio del mes. Considerá reasignarle 2-3 leads</div>
+            <div class="patron-explainer">
+              Sofía lleva 10 leads activos (vs Diego 22, Mariana 18) y tiene <strong>21% de ratio de cierre</strong> contra el 14% del equipo. Diego está sobrecargado con 5 leads frío sin atender.
+            </div>
+          </div>
+          <div class="patron-actions">
+            <button class="btn primary">Ver equipo</button>
+            <button class="btn text-only">Marcar resuelto</button>
+          </div>
+        </div>
+      </article>
+
+    </div>
+
+  </main>
+
+</div>
+
+<script>
+  const sidebar = document.querySelector('.sidebar');
+  const backdrop = document.getElementById('backdrop');
+  document.getElementById('open-sidebar')?.addEventListener('click', () => {
+    sidebar.classList.add('open');
+    backdrop.classList.add('active');
+  });
+  backdrop?.addEventListener('click', () => {
+    sidebar.classList.remove('open');
+    backdrop.classList.remove('active');
+  });
+</script>
+
+</body>
+</html>

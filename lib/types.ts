@@ -145,6 +145,70 @@ export type PipelineEstado = {
   valor_total: number;
 };
 
+// ─── Patrones (pantalla /patrones) ───────────────────────────────────────────
+
+export type PatronTipo =
+  | "operativo"
+  | "atasco"
+  | "oportunidad"
+  | "tendencia"
+  | "sugerencia";
+
+// Chart data opcional que va dentro de Patron.metadata.chart.
+// Hoy solo lo usa el detector "mejor horario" (oportunidad).
+export type ChartData = {
+  // Tipo de visualización; permite que MiniChart elija el render.
+  tipo: "mejor_horario";
+  labels: string[]; // Eje X (ej: ['L','M','Mar','J','V'])
+  datos: { label: string; valor: number; highlight?: boolean }[];
+  promedio: number;
+  unidad?: string; // "%" por default
+};
+
+export type Patron = {
+  id: string;
+  tipo: PatronTipo;
+  clave_unica: string;
+  titulo: string;             // HTML simple: solo <strong>
+  explainer: string;          // HTML simple: solo <strong>
+  detectado_en: string;
+  resuelto_en: string | null;
+  resuelto_por: string | null;
+  resuelto_por_nombre?: string | null; // join opcional
+  leads_afectados: string[];
+  valor_en_juego: number;
+  metadata: {
+    chart?: ChartData;
+    label_count?: string;
+    [key: string]: unknown;
+  };
+  accion_label: string | null;
+  accion_href: string | null;
+};
+
+// Resumen visible de un lead dentro de la lista "afectados" de un patrón.
+export type LeadAfectado = {
+  id: string;
+  nombre: string;
+  meta: string; // "Formulario · 6 días" / "Propuesta · 18 días sin tocar"
+  valor: number;
+  comercial: {
+    iniciales: string;
+    avatar_gradient: string;
+  } | null;
+};
+
+// Stats agregados de la pantalla /patrones.
+export type PatronesStats = {
+  detectados_mes: number;
+  resueltos_semana: number;
+  valor_en_juego: number;
+};
+
+// Compat: el banner viejo (AIInsight) trabajaba con esta shape. Para no
+// romper el componente, conservamos el tipo y lo derivamos del primer
+// patrón disponible. Cuando reescribamos AIInsight para ser genérico,
+// este tipo desaparece.
 export type PatronIa = {
   patron: string;
   cantidad: number;

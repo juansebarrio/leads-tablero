@@ -6,6 +6,7 @@
  */
 
 import { NextResponse } from "next/server";
+import { detectarPatrones } from "@/lib/patrones-detectores";
 import { resetAndSeed } from "@/lib/seed";
 
 // El endpoint nunca debe ser cacheado.
@@ -30,6 +31,14 @@ export async function GET(req: Request) {
   try {
     const started = Date.now();
     const result = await resetAndSeed();
+    // Detectores de patrones — corren contra los datos recién sembrados.
+    // Si fallan, no abortamos el reset: la pantalla /patrones los reintenta
+    // on-demand cuando alguien entra.
+    try {
+      await detectarPatrones();
+    } catch (errInsights) {
+      console.warn("[reset] detectarPatrones falló:", errInsights);
+    }
     const ms = Date.now() - started;
     return NextResponse.json({ ok: true, ms, ...result });
   } catch (err) {

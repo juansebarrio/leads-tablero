@@ -729,8 +729,10 @@ export type SeedResult = {
 export async function resetAndSeed(): Promise<SeedResult> {
   const supabase = createServiceRoleClient();
 
-  // Borrado en orden inverso a las FKs.
-  for (const tabla of ["contactos", "agenda", "leads", "comerciales"] as const) {
+  // Borrado en orden inverso a las FKs. Incluye `patrones` (no tiene FK
+  // a las otras, pero se limpia para que la pantalla /patrones arranque
+  // recalculando contra los datos frescos).
+  for (const tabla of ["patrones", "contactos", "agenda", "leads", "comerciales"] as const) {
     const { error } = await supabase
       .from(tabla)
       .delete()

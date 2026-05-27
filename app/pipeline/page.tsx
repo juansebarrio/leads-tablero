@@ -7,8 +7,8 @@ import {
   getComerciales,
   getLeadsFrios,
   getLeadsParaKanban,
+  getPatronesActivosCount,
   getPipelineResumen,
-  getPrimerPatronIa,
 } from "@/lib/queries";
 
 interface SearchParams {
@@ -32,7 +32,7 @@ export default async function PipelinePage({
       pipeline,
       frios,
       agendaEvents,
-      patron,
+      patronesCount,
     ] = await Promise.all([
       getCurrentUser(),
       getLeadsParaKanban(),
@@ -40,7 +40,7 @@ export default async function PipelinePage({
       getPipelineResumen(),
       getLeadsFrios(),
       getAgendaDia(),
-      getPrimerPatronIa(),
+      getPatronesActivosCount(),
     ]);
     datos = {
       currentUser,
@@ -49,7 +49,7 @@ export default async function PipelinePage({
       pipeline,
       frios,
       agendaEvents,
-      patron,
+      patronesCount,
     };
   } catch (err) {
     return (
@@ -70,7 +70,7 @@ export default async function PipelinePage({
     pipeline,
     frios,
     agendaEvents,
-    patron,
+    patronesCount,
   } = datos;
 
   const counts = {
@@ -82,7 +82,7 @@ export default async function PipelinePage({
       pipeline.find((p) => p.estado === "conversacion")?.cantidad ?? 0,
     propuesta: pipeline.find((p) => p.estado === "propuesta")?.cantidad ?? 0,
     ganados: pipeline.find((p) => p.estado === "ganado")?.cantidad ?? null,
-    patrones: patron ? 1 : 0,
+    patrones: patronesCount,
   };
 
   return (

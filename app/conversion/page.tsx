@@ -14,8 +14,8 @@ import {
   getFunnelData,
   getLeadsFrios,
   getLeadsParaKanban,
+  getPatronesActivosCount,
   getPipelineResumen,
-  getPrimerPatronIa,
   getTimingData,
   getTrendData,
 } from "@/lib/queries";
@@ -55,8 +55,8 @@ export default async function ConversionPage({
       pipeline,
       frios,
       agendaEvents,
-      patron,
       leadsKanban,
+      patronesCount,
     ] = await Promise.all([
       getCurrentUser(),
       getFunnelData(mesesAtras),
@@ -67,8 +67,8 @@ export default async function ConversionPage({
       getPipelineResumen(),
       getLeadsFrios(),
       getAgendaDia(),
-      getPrimerPatronIa(),
       getLeadsParaKanban(),
+      getPatronesActivosCount(),
     ]);
     datos = {
       currentUser,
@@ -80,8 +80,8 @@ export default async function ConversionPage({
       pipeline,
       frios,
       agendaEvents,
-      patron,
       leadsKanban,
+      patronesCount,
     };
   } catch (err) {
     return (
@@ -105,8 +105,8 @@ export default async function ConversionPage({
     pipeline,
     frios,
     agendaEvents,
-    patron,
     leadsKanban,
+    patronesCount,
   } = datos;
 
   // El funnel y los KPIs se sirven del período activo. Para "trimestre"
@@ -124,7 +124,7 @@ export default async function ConversionPage({
       pipeline.find((p) => p.estado === "conversacion")?.cantidad ?? 0,
     propuesta: pipeline.find((p) => p.estado === "propuesta")?.cantidad ?? 0,
     ganados: pipeline.find((p) => p.estado === "ganado")?.cantidad ?? null,
-    patrones: patron ? 1 : 0,
+    patrones: patronesCount,
   };
 
   const eyebrowMes = formatMesAnio();

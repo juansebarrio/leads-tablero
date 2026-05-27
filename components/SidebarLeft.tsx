@@ -7,6 +7,7 @@ import {
   FileText,
   MessageSquare,
   Search,
+  Sparkles,
   Target,
   TrendingUp,
   Users,
@@ -62,6 +63,12 @@ export function SidebarLeft({ counts = {}, currentUser }: SidebarLeftProps) {
     },
     { label: "Equipo", icon: Users, href: "/equipo" },
     { label: "Conversión", icon: TrendingUp, href: "/conversion" },
+    {
+      label: "Patrones",
+      icon: Sparkles,
+      count: counts.patrones,
+      href: "/patrones",
+    },
     {
       label: "Pipeline",
       icon: BarChart3,

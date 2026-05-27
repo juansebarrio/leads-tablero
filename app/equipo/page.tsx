@@ -10,8 +10,8 @@ import {
   getEquipoMetricas,
   getLeadsFrios,
   getLeadsParaKanban,
+  getPatronesActivosCount,
   getPipelineResumen,
-  getPrimerPatronIa,
 } from "@/lib/queries";
 
 export default async function EquipoPage() {
@@ -24,8 +24,8 @@ export default async function EquipoPage() {
       pipeline,
       frios,
       agendaEvents,
-      patron,
       leadsKanban,
+      patronesCount,
     ] = await Promise.all([
       getCurrentUser(),
       getComercialesConMetricas(),
@@ -33,8 +33,8 @@ export default async function EquipoPage() {
       getPipelineResumen(),
       getLeadsFrios(),
       getAgendaDia(),
-      getPrimerPatronIa(),
       getLeadsParaKanban(),
+      getPatronesActivosCount(),
     ]);
     datos = {
       currentUser,
@@ -43,8 +43,8 @@ export default async function EquipoPage() {
       pipeline,
       frios,
       agendaEvents,
-      patron,
       leadsKanban,
+      patronesCount,
     };
   } catch (err) {
     return (
@@ -65,8 +65,8 @@ export default async function EquipoPage() {
     pipeline,
     frios,
     agendaEvents,
-    patron,
     leadsKanban,
+    patronesCount,
   } = datos;
 
   const counts = {
@@ -78,7 +78,7 @@ export default async function EquipoPage() {
       pipeline.find((p) => p.estado === "conversacion")?.cantidad ?? 0,
     propuesta: pipeline.find((p) => p.estado === "propuesta")?.cantidad ?? 0,
     ganados: pipeline.find((p) => p.estado === "ganado")?.cantidad ?? null,
-    patrones: patron ? 1 : 0,
+    patrones: patronesCount,
   };
 
   // Días restantes hasta fin del mes (para el sub de la barra de meta).

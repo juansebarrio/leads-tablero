@@ -15,8 +15,8 @@ import {
   getAgendaDia,
   getLeadConDetalle,
   getLeadsFrios,
+  getPatronesActivosCount,
   getPipelineResumen,
-  getPrimerPatronIa,
 } from "@/lib/queries";
 
 interface Params {
@@ -32,16 +32,16 @@ export default async function LeadPage({
 
   let datos;
   try {
-    const [currentUser, lead, pipeline, frios, agendaEvents, patron] =
+    const [currentUser, lead, pipeline, frios, agendaEvents, patronesCount] =
       await Promise.all([
         getCurrentUser(),
         getLeadConDetalle(id),
         getPipelineResumen(),
         getLeadsFrios(),
         getAgendaDia(),
-        getPrimerPatronIa(),
+        getPatronesActivosCount(),
       ]);
-    datos = { currentUser, lead, pipeline, frios, agendaEvents, patron };
+    datos = { currentUser, lead, pipeline, frios, agendaEvents, patronesCount };
   } catch (err) {
     return (
       <ErrorView
@@ -54,7 +54,8 @@ export default async function LeadPage({
     );
   }
 
-  const { currentUser, lead, pipeline, frios, agendaEvents, patron } = datos;
+  const { currentUser, lead, pipeline, frios, agendaEvents, patronesCount } =
+    datos;
   if (!lead) notFound();
 
   const counts = {
@@ -65,7 +66,7 @@ export default async function LeadPage({
       pipeline.find((p) => p.estado === "conversacion")?.cantidad ?? 0,
     propuesta: pipeline.find((p) => p.estado === "propuesta")?.cantidad ?? 0,
     ganados: pipeline.find((p) => p.estado === "ganado")?.cantidad ?? null,
-    patrones: patron ? 1 : 0,
+    patrones: patronesCount,
   };
 
   const ultimoContactoTexto = lead.fecha_ultimo_contacto

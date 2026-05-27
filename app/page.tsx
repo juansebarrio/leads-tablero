@@ -12,6 +12,7 @@ import {
   getAgendaDia,
   getLeadsFrios,
   getOportunidadesDia,
+  getPatronesActivosCount,
   getPipelineResumen,
   getPrimerPatronIa,
 } from "@/lib/queries";
@@ -23,15 +24,23 @@ import {
 export default async function Page() {
   let data;
   try {
-    const [currentUser, pipeline, frios, oportunidades, agendaEvents, patron] =
-      await Promise.all([
-        getCurrentUser(),
-        getPipelineResumen(),
-        getLeadsFrios(),
-        getOportunidadesDia(),
-        getAgendaDia(),
-        getPrimerPatronIa(),
-      ]);
+    const [
+      currentUser,
+      pipeline,
+      frios,
+      oportunidades,
+      agendaEvents,
+      patron,
+      patronesCount,
+    ] = await Promise.all([
+      getCurrentUser(),
+      getPipelineResumen(),
+      getLeadsFrios(),
+      getOportunidadesDia(),
+      getAgendaDia(),
+      getPrimerPatronIa(),
+      getPatronesActivosCount(),
+    ]);
     data = {
       currentUser,
       pipeline,
@@ -39,6 +48,7 @@ export default async function Page() {
       oportunidades,
       agendaEvents,
       patron,
+      patronesCount,
     };
   } catch (err) {
     return (
@@ -52,8 +62,15 @@ export default async function Page() {
     );
   }
 
-  const { currentUser, pipeline, frios, oportunidades, agendaEvents, patron } =
-    data;
+  const {
+    currentUser,
+    pipeline,
+    frios,
+    oportunidades,
+    agendaEvents,
+    patron,
+    patronesCount,
+  } = data;
 
   const cantidadFrios = frios.length;
   const cantidadOportunidades = oportunidades.length;
@@ -67,7 +84,7 @@ export default async function Page() {
       pipeline.find((p) => p.estado === "conversacion")?.cantidad ?? 0,
     propuesta: pipeline.find((p) => p.estado === "propuesta")?.cantidad ?? 0,
     ganados: pipeline.find((p) => p.estado === "ganado")?.cantidad ?? null,
-    patrones: patron ? 1 : 0,
+    patrones: patronesCount,
   };
 
   return (
