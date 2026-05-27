@@ -211,8 +211,11 @@ async function detectarAtascosEnEtapa(supabase: SupabaseClient) {
   }
 }
 
-// 3) OPORTUNIDAD · mejor día de la semana para cerrar (basado en leads
-// ganados con fecha_cierre conocida).
+// 3) OPORTUNIDAD · mejor día de la semana para cerrar.
+// Usamos fecha_ultimo_contacto del lead ganado como proxy de "cuándo
+// cerró" (el seed no puebla fecha_cierre; ese campo solo se llena via
+// el drawer "Confirmar ganado"). Caemos a fecha_creacion si no hay
+// último contacto registrado.
 async function detectarMejorHorarioCierre(supabase: SupabaseClient) {
   const clave = `oportunidad:mejor_dia_cierre:${mesISO()}`;
   const hace90 = new Date();
@@ -220,7 +223,7 @@ async function detectarMejorHorarioCierre(supabase: SupabaseClient) {
 
   const { data, error } = await supabase
     .from("leads")
-    .select("id, fecha_cierre, fecha_creacion, estado")
+    .select("id, fecha_ultimo_contacto, fecha_creacion, estado")
     .eq("estado", "ganado")
     .gte("fecha_creacion", hace90.toISOString());
   if (error) {
@@ -236,7 +239,9 @@ async function detectarMejorHorarioCierre(supabase: SupabaseClient) {
   const labels = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
   const cuentas = new Array(7).fill(0) as number[];
   for (const lead of data) {
-    const fecha = (lead.fecha_cierre as string) || (lead.fecha_creacion as string);
+    const fecha =
+      (lead.fecha_ultimo_contacto as string | null) ||
+      (lead.fecha_creacion as string);
     const d = new Date(fecha);
     cuentas[d.getDay()]++;
   }

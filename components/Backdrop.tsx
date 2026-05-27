@@ -9,7 +9,7 @@ export function Backdrop() {
   return (
     <div
       onClick={closeAll}
-      className="fixed inset-0 bg-[rgba(14,14,18,0.4)] z-[80]"
+      className="fixed inset-0 bg-[rgba(14,14,18,0.4)] z-[60]"
       aria-hidden
     />
   );
