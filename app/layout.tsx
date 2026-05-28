@@ -1,7 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import { Fraunces, Inter } from "next/font/google";
 import { Toaster } from "sonner";
+import { DemoBanner } from "@/components/DemoBanner";
 import { GlobalShortcuts } from "@/components/GlobalShortcuts";
+import { config } from "@/lib/config";
 import "./globals.css";
 
 const fraunces = Fraunces({
@@ -54,6 +56,7 @@ export default function RootLayout({
     <html lang="es" className={`${fraunces.variable} ${inter.variable}`}>
       <body>
         <GlobalShortcuts />
+        {config.showDemoBanner && <DemoBanner />}
         {children}
         <Toaster
           position="bottom-right"
