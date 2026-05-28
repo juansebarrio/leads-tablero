@@ -9,6 +9,7 @@
  * se ve fresca cada día sin tener que reescribir el seed.
  */
 
+import { DEMO_ORG_ID } from "@/lib/config";
 import { createServiceRoleClient } from "@/lib/supabase/service";
 
 // ─── Helpers de fechas relativas ─────────────────────────────────────────────
@@ -1641,17 +1642,21 @@ export async function resetAndSeed(): Promise<SeedResult> {
   // Borrado en orden inverso a las FKs. Incluye `patrones` (no tiene FK
   // a las otras, pero se limpia para que la pantalla /patrones arranque
   // recalculando contra los datos frescos).
+  //
+  // Sprint 6.1: acotado por organizacion_id = DEMO_ORG_ID. service_role
+  // bypassa RLS, así que sin este filtro un seed equivocado podría
+  // borrar datos de otra org (ej. JS80).
   for (const tabla of ["patrones", "contactos", "agenda", "leads", "comerciales"] as const) {
     const { error } = await supabase
       .from(tabla)
       .delete()
-      .not("id", "is", null);
+      .eq("organizacion_id", DEMO_ORG_ID);
     if (error) throw new Error(`Limpiando ${tabla}: ${error.message}`);
   }
 
   const { data: comInsertados, error: errCom } = await supabase
     .from("comerciales")
-    .insert(COMERCIALES)
+    .insert(COMERCIALES.map((c) => ({ ...c, organizacion_id: DEMO_ORG_ID })))
     .select();
   if (errCom || !comInsertados) {
     throw new Error(`Insertando comerciales: ${errCom?.message ?? "sin data"}`);
@@ -1661,6 +1666,7 @@ export async function resetAndSeed(): Promise<SeedResult> {
     comInsertados.find((c) => c.iniciales === ini)!.id;
 
   const leadsPayload = LEADS.map((l) => ({
+    organizacion_id: DEMO_ORG_ID,
     nombre: l.nombre,
     origen: l.origen,
     origen_detalle: l.origen_detalle ?? null,
@@ -1722,12 +1728,15 @@ export async function resetAndSeed(): Promise<SeedResult> {
 
   const { error: errContactos } = await supabase
     .from("contactos")
-    .insert(todosContactos);
+    .insert(
+      todosContactos.map((c) => ({ ...c, organizacion_id: DEMO_ORG_ID })),
+    );
   if (errContactos) {
     throw new Error(`Insertando contactos: ${errContactos.message}`);
   }
 
   const agendaPayload = AGENDA.map((e) => ({
+    organizacion_id: DEMO_ORG_ID,
     lead_id: e.leadNombre ? leadIdPorNombre.get(e.leadNombre) ?? null : null,
     fecha: hoyA(e.hora, e.minuto),
     duracion_min: e.duracion_min,
