@@ -12,11 +12,16 @@ export async function marcarPatronResuelto(
   if (!patronId) return { ok: false, error: "Falta el patrón" };
   const user = await getCurrentUser();
   const supabase = await createClient();
+  // Sprint 8.5: resuelto_por es FK a comerciales(id). En demo,
+  // user.comercial_id es igual al user.id (mismo registro). En production,
+  // si el auth user no tiene comercial vinculado, comercial_id queda null
+  // — el marcador real de "resuelto" es resuelto_en, así que null acá solo
+  // pierde trazabilidad pero no rompe la semántica del patrón.
   const { error } = await supabase
     .from("patrones")
     .update({
       resuelto_en: new Date().toISOString(),
-      resuelto_por: user.id,
+      resuelto_por: user.comercial_id,
     })
     .eq("organizacion_id", user.organizacion_id)
     .eq("id", patronId)

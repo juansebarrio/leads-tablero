@@ -138,8 +138,18 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser> => {
     (user.user_metadata?.full_name as string | undefined) ||
     user.email!.split("@")[0];
 
-  // comerciales.usuario_id se agrega en Sprint 8 — hasta entonces, en
-  // production no podemos hidratar comercial_id desde la membership.
+  // Sprint 8.4: hidratamos comercial_id buscando un comercial vinculado
+  // por usuario_id. Si el auth user no tiene comercial linkeado todavía
+  // (caso transitorio durante el onboarding manual de Sprint 8.2/8.3),
+  // queda null — la app sigue funcionando, pero las acciones que escriben
+  // FKs a comerciales (ej. patrones.resuelto_por) van a perder
+  // trazabilidad hasta que se complete la vinculación.
+  const { data: comercial } = await supabase
+    .from("comerciales")
+    .select("id")
+    .eq("usuario_id", user.id)
+    .maybeSingle();
+
   return {
     id: user.id,
     email: user.email!,
@@ -149,7 +159,7 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser> => {
     organizacion_id: org.organizacion.id,
     organizacion_slug: org.organizacion.slug,
     rol: org.rol,
-    comercial_id: null,
+    comercial_id: comercial?.id ?? null,
   };
 });
 
