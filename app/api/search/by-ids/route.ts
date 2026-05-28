@@ -3,6 +3,7 @@
 // la info completa sin guardar todo en client.
 
 import { NextResponse } from "next/server";
+import { getCurrentUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import type { SearchLead } from "@/app/api/search/route";
 
@@ -19,12 +20,14 @@ export async function GET(request: Request) {
     return NextResponse.json({ leads: [] });
   }
 
+  const user = await getCurrentUser();
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("leads")
     .select(
       "id, nombre, estado, valor_estimado, motivo_perdida, comerciales:responsable_id(nombre, iniciales, avatar_gradient)",
     )
+    .eq("organizacion_id", user.organizacion_id)
     .in("id", ids);
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

@@ -3,6 +3,7 @@
 // contactos (por nota). Devuelve listas acotadas por tipo.
 
 import { NextResponse } from "next/server";
+import { getCurrentUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -50,6 +51,7 @@ export async function GET(request: Request) {
   // Escapamos los wildcards del ilike pattern para no exponer search injection.
   const pattern = `%${q.replace(/[\\%_]/g, "\\$&")}%`;
 
+  const user = await getCurrentUser();
   const supabase = await createClient();
   let leadsRes, comercialesRes, notasRes;
   try {
@@ -59,16 +61,19 @@ export async function GET(request: Request) {
         .select(
           "id, nombre, estado, valor_estimado, motivo_perdida, comerciales:responsable_id(nombre, iniciales, avatar_gradient)",
         )
+        .eq("organizacion_id", user.organizacion_id)
         .ilike("nombre", pattern)
         .limit(8),
       supabase
         .from("comerciales")
         .select("id, nombre, iniciales, avatar_gradient")
+        .eq("organizacion_id", user.organizacion_id)
         .ilike("nombre", pattern)
         .limit(5),
       supabase
         .from("contactos")
         .select("id, lead_id, canal, fecha, nota, leads:lead_id(nombre)")
+        .eq("organizacion_id", user.organizacion_id)
         .ilike("nota", pattern)
         // Eventos internos no son notas reales para el usuario.
         .not("canal", "in", '("cambio_estado","reasignacion")')
