@@ -1,6 +1,14 @@
 // Queries del tablero. Todas server-side: usan el cliente de
 // @/lib/supabase/server y se ejecutan en Server Components o Route Handlers.
+//
+// Sprint 6.2 · Defensa en profundidad: las queries que tocan tablas
+// directas o views que exponen `organizacion_id` filtran explícitamente
+// con .eq("organizacion_id", orgId). Las que leen de views agregadas
+// (v_pipeline_resumen, v_ganados_mes, v_comerciales_metricas, etc.)
+// se quedan sin filtro explícito porque (a) esas views NO proyectan
+// organizacion_id y (b) están protegidas por RLS + security_invoker.
 
+import { getCurrentOrgId } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import type {
   CerradosKpis,
@@ -40,25 +48,30 @@ export async function getPipelineResumen(): Promise<PipelineEstado[]> {
 }
 
 export async function getLeadsFrios(): Promise<LeadFrio[]> {
+  const orgId = await getCurrentOrgId();
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("v_leads_frios")
-    .select("*");
+    .select("*")
+    .eq("organizacion_id", orgId);
   if (error) throw error;
   return (data ?? []) as LeadFrio[];
 }
 
 export async function getOportunidadesDia(): Promise<OportunidadDia[]> {
+  const orgId = await getCurrentOrgId();
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("v_oportunidades_dia")
-    .select("*");
+    .select("*")
+    .eq("organizacion_id", orgId);
   if (error) throw error;
   return (data ?? []) as OportunidadDia[];
 }
 
 // Eventos de agenda del día corriente, ordenados por hora.
 export async function getAgendaDia(): Promise<EventoAgenda[]> {
+  const orgId = await getCurrentOrgId();
   const supabase = await createClient();
   const hoy = new Date();
   hoy.setHours(0, 0, 0, 0);
@@ -68,6 +81,7 @@ export async function getAgendaDia(): Promise<EventoAgenda[]> {
   const { data, error } = await supabase
     .from("agenda")
     .select("*")
+    .eq("organizacion_id", orgId)
     .gte("fecha", hoy.toISOString())
     .lt("fecha", manana.toISOString())
     .order("fecha", { ascending: true });
@@ -80,16 +94,19 @@ export async function getAgendaDia(): Promise<EventoAgenda[]> {
 export async function getLeadConDetalle(
   id: string,
 ): Promise<LeadDetalle | null> {
+  const orgId = await getCurrentOrgId();
   const supabase = await createClient();
   const [leadRes, contactosRes, agendaRes] = await Promise.all([
     supabase
       .from("leads")
       .select("*, comerciales(*)")
+      .eq("organizacion_id", orgId)
       .eq("id", id)
       .maybeSingle(),
     supabase
       .from("contactos")
       .select("*")
+      .eq("organizacion_id", orgId)
       .eq("lead_id", id)
       // Cambios de estado y reasignaciones son eventos internos del sistema.
       // Se guardan para auditoría pero no se muestran en la timeline visible.
@@ -98,6 +115,7 @@ export async function getLeadConDetalle(
     supabase
       .from("agenda")
       .select("*")
+      .eq("organizacion_id", orgId)
       .eq("lead_id", id)
       .order("fecha", { ascending: true }),
   ]);
@@ -120,10 +138,12 @@ export async function getLeadConDetalle(
 // Ordenamos por fecha_creacion desc para que las cards más nuevas queden arriba
 // dentro de cada columna.
 export async function getLeadsParaKanban(): Promise<LeadKanban[]> {
+  const orgId = await getCurrentOrgId();
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("v_leads_kanban")
     .select("*")
+    .eq("organizacion_id", orgId)
     .order("fecha_creacion", { ascending: false });
   if (error) throw error;
   return (data ?? []) as LeadKanban[];
@@ -131,10 +151,12 @@ export async function getLeadsParaKanban(): Promise<LeadKanban[]> {
 
 // Lista completa de comerciales (para el filtro del kanban).
 export async function getComerciales(): Promise<Comercial[]> {
+  const orgId = await getCurrentOrgId();
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("comerciales")
     .select("*")
+    .eq("organizacion_id", orgId)
     .order("nombre", { ascending: true });
   if (error) throw error;
   return (data ?? []) as Comercial[];
@@ -225,10 +247,12 @@ export async function getTrendData(meses = 3): Promise<TrendPoint[]> {
 // operativo activo de tipo "leads_sin_asignar" y lo mapea a la shape
 // vieja PatronIa. Si no existe, el banner no se muestra.
 export async function getPrimerPatronIa(): Promise<PatronIa | null> {
+  const orgId = await getCurrentOrgId();
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("patrones")
     .select("metadata, detectado_en, leads_afectados")
+    .eq("organizacion_id", orgId)
     .like("clave_unica", "operativo:leads_sin_asignar:%")
     .is("resuelto_en", null)
     .order("detectado_en", { ascending: false })
@@ -253,10 +277,12 @@ export async function getPrimerPatronIa(): Promise<PatronIa | null> {
 // Pantalla /patrones · listado completo, activos primero (recientes arriba),
 // resueltos al final.
 export async function getPatrones(): Promise<Patron[]> {
+  const orgId = await getCurrentOrgId();
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("patrones")
     .select("*, comerciales:resuelto_por(nombre)")
+    .eq("organizacion_id", orgId)
     .order("resuelto_en", { ascending: true, nullsFirst: true })
     .order("detectado_en", { ascending: false });
   if (error) throw error;
@@ -273,6 +299,7 @@ export async function getPatrones(): Promise<Patron[]> {
 
 // Stats agregados del header de /patrones.
 export async function getPatronesStats(): Promise<PatronesStats> {
+  const orgId = await getCurrentOrgId();
   const supabase = await createClient();
   // Detectados este mes (no resueltos), resueltos en últimos 7 días,
   // valor_en_juego sumado entre activos.
@@ -286,11 +313,13 @@ export async function getPatronesStats(): Promise<PatronesStats> {
     supabase
       .from("patrones")
       .select("valor_en_juego")
+      .eq("organizacion_id", orgId)
       .is("resuelto_en", null)
       .gte("detectado_en", inicioMes.toISOString()),
     supabase
       .from("patrones")
       .select("id", { count: "exact", head: true })
+      .eq("organizacion_id", orgId)
       .gte("resuelto_en", hace7.toISOString()),
   ]);
 
@@ -312,10 +341,12 @@ export async function getPatronesStats(): Promise<PatronesStats> {
 
 // Sidebar count: patrones no resueltos.
 export async function getPatronesActivosCount(): Promise<number> {
+  const orgId = await getCurrentOrgId();
   const supabase = await createClient();
   const { count, error } = await supabase
     .from("patrones")
     .select("id", { count: "exact", head: true })
+    .eq("organizacion_id", orgId)
     .is("resuelto_en", null);
   if (error) throw error;
   return count ?? 0;
@@ -327,12 +358,14 @@ export async function getLeadsAfectados(
   ids: string[],
 ): Promise<LeadAfectado[]> {
   if (ids.length === 0) return [];
+  const orgId = await getCurrentOrgId();
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("leads")
     .select(
       "id, nombre, valor_estimado, origen, estado, fecha_creacion, fecha_ultimo_contacto, comerciales:responsable_id(iniciales, avatar_gradient)",
     )
+    .eq("organizacion_id", orgId)
     .in("id", ids);
   if (error) throw error;
   type Row = {

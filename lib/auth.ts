@@ -17,6 +17,7 @@
  * directo con `comerciales` para el usuario actual — todo pasa por acá.
  */
 
+import { cache } from "react";
 import { DEMO_ORG_ID, isDemoMode } from "@/lib/config";
 import { createClient } from "@/lib/supabase/server";
 import type { Comercial } from "@/lib/types";
@@ -63,7 +64,13 @@ function gradientPorEmail(email: string): string {
   return FALLBACK_GRADIENTS[Math.abs(hash) % FALLBACK_GRADIENTS.length];
 }
 
-export async function getCurrentUser(): Promise<CurrentUser> {
+// Envuelta en React.cache() para que el lookup por email (demo) o el
+// getUser() + membership join (production) se haga UNA sola vez por
+// request. Sin esto, cada page que llama getCurrentUser() + cada query
+// que después llama getCurrentOrgId() multiplicaba los round-trips.
+// Fuera de un render de Server Component (CLI puro, ej. scripts/seed.ts),
+// React.cache es no-op — no rompe, simplemente no memoiza.
+export const getCurrentUser = cache(async (): Promise<CurrentUser> => {
   // ─── MODO DEMO: lookup runtime de Mariana (mismo comportamiento de Sprint 0) ───
   if (isDemoMode) {
     const supabase = await createClient();
@@ -144,11 +151,11 @@ export async function getCurrentUser(): Promise<CurrentUser> {
     rol: org.rol,
     comercial_id: null,
   };
-}
+});
 
-// Helper público — devuelve el org id del usuario actual. Se conserva por
-// compatibilidad con código viejo (no se usa todavía en la app, pero la
-// firma se mantiene). Internamente apoya en getCurrentUser().
+// Helper público — devuelve el org id del usuario actual. Apoya en
+// getCurrentUser(), así que el cache aplica acá también: si una request
+// llama getCurrentUser() y después getCurrentOrgId(), es un solo round-trip.
 export async function getCurrentOrgId(): Promise<string> {
   const user = await getCurrentUser();
   return user.organizacion_id;
