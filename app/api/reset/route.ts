@@ -6,7 +6,7 @@
  */
 
 import { NextResponse } from "next/server";
-import { DEMO_ORG_ID } from "@/lib/config";
+import { config, DEMO_ORG_ID } from "@/lib/config";
 import { detectarPatrones } from "@/lib/patrones-detectores";
 import { resetAndSeed } from "@/lib/seed";
 
@@ -16,6 +16,15 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 export async function GET(req: Request) {
+  // Gate por modo (Sprint 7.2): solo corre en demo. En production o si el
+  // env está unset/raro, 404 antes de tocar nada — defensa en profundidad
+  // contra que el cron contamine prod con datos de la org demo.
+  // `config.enableDailyReset` es fail-closed: true SOLO si APP_MODE === "demo"
+  // explícitamente.
+  if (!config.enableDailyReset) {
+    return new NextResponse(null, { status: 404 });
+  }
+
   const auth = req.headers.get("authorization");
   const secret = process.env.CRON_SECRET;
 
