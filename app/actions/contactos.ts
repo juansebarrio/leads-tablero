@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { getCurrentUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import type { CanalContacto } from "@/lib/types";
 
@@ -42,10 +43,12 @@ export async function registrarContacto(
     return { ok: false, error: "Fecha de contacto inválida" };
   }
 
+  const user = await getCurrentUser();
   const supabase = await createClient();
 
   // 1) Insert del contacto. El trigger de DB actualiza fecha_ultimo_contacto.
   const { error: errContacto } = await supabase.from("contactos").insert({
+    organizacion_id: user.organizacion_id,
     lead_id: input.leadId,
     fecha: input.fecha,
     canal: input.canal,
@@ -63,6 +66,7 @@ export async function registrarContacto(
         proximo_paso: paso || null,
         proximo_paso_fecha: pasoFecha || null,
       })
+      .eq("organizacion_id", user.organizacion_id)
       .eq("id", input.leadId);
     if (errLead) return { ok: false, error: errLead.message };
   }

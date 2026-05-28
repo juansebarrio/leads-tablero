@@ -1,8 +1,14 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { getCurrentUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import type { Estado, MotivoPerdida, Origen, TipoNegocio } from "@/lib/types";
+
+// "No encontrado o sin acceso": el UPDATE matcheó 0 filas. Pasa cuando el
+// lead no existe, ya está en otro estado, o pertenece a otra org. Devolvemos
+// un error genérico para no leak info de cross-org.
+const ERR_LEAD_NO_ACCESS = "Lead no encontrado o sin acceso";
 
 const ORIGENES: Origen[] = ["formulario", "referido", "linkedin", "whatsapp"];
 const ESTADOS: Estado[] = [
@@ -56,10 +62,12 @@ export async function crearLead(
     return { ok: false, error: "Origen no válido" };
   }
 
+  const user = await getCurrentUser();
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("leads")
     .insert({
+      organizacion_id: user.organizacion_id,
       nombre,
       origen: input.origen,
       estado: "nuevo",
@@ -101,15 +109,22 @@ export async function cambiarEstado(
   }
   if (input.from === input.to) return { ok: true, data: undefined };
 
+  const user = await getCurrentUser();
   const supabase = await createClient();
 
-  const { error: errLead } = await supabase
+  const { data: leadUpdated, error: errLead } = await supabase
     .from("leads")
     .update({ estado: input.to })
-    .eq("id", input.leadId);
+    .eq("organizacion_id", user.organizacion_id)
+    .eq("id", input.leadId)
+    .select("id");
   if (errLead) return { ok: false, error: errLead.message };
+  if (!leadUpdated || leadUpdated.length === 0) {
+    return { ok: false, error: ERR_LEAD_NO_ACCESS };
+  }
 
   const { error: errContacto } = await supabase.from("contactos").insert({
+    organizacion_id: user.organizacion_id,
     lead_id: input.leadId,
     fecha: new Date().toISOString(),
     canal: "cambio_estado",
@@ -166,8 +181,9 @@ export async function actualizarLead(
     }
   }
 
+  const user = await getCurrentUser();
   const supabase = await createClient();
-  const { error } = await supabase
+  const { data: updated, error } = await supabase
     .from("leads")
     .update({
       nombre,
@@ -180,9 +196,14 @@ export async function actualizarLead(
       proximo_paso: input.proximo_paso?.trim() || null,
       proximo_paso_fecha: input.proximo_paso_fecha || null,
     })
-    .eq("id", input.leadId);
+    .eq("organizacion_id", user.organizacion_id)
+    .eq("id", input.leadId)
+    .select("id");
 
   if (error) return { ok: false, error: error.message };
+  if (!updated || updated.length === 0) {
+    return { ok: false, error: ERR_LEAD_NO_ACCESS };
+  }
 
   revalidateLead(input.leadId);
   return { ok: true, data: undefined };
@@ -206,13 +227,19 @@ export async function reasignarLead(
   if (!input.leadId) return { ok: false, error: "Falta el lead" };
   if (!input.comercialId) return { ok: false, error: "Elegí un responsable" };
 
+  const user = await getCurrentUser();
   const supabase = await createClient();
 
-  const { error: errLead } = await supabase
+  const { data: leadUpdated, error: errLead } = await supabase
     .from("leads")
     .update({ responsable_id: input.comercialId })
-    .eq("id", input.leadId);
+    .eq("organizacion_id", user.organizacion_id)
+    .eq("id", input.leadId)
+    .select("id");
   if (errLead) return { ok: false, error: errLead.message };
+  if (!leadUpdated || leadUpdated.length === 0) {
+    return { ok: false, error: ERR_LEAD_NO_ACCESS };
+  }
 
   // Registro del cambio en el historial. Canal interno: no impacta
   // fecha_ultimo_contacto.
@@ -221,6 +248,7 @@ export async function reasignarLead(
     ? `Reasignado de ${desde} a ${input.comercialNombre}. ${input.motivo.trim()}`
     : `Reasignado de ${desde} a ${input.comercialNombre}`;
   const { error: errContacto } = await supabase.from("contactos").insert({
+    organizacion_id: user.organizacion_id,
     lead_id: input.leadId,
     fecha: new Date().toISOString(),
     canal: "reasignacion",
@@ -262,10 +290,11 @@ export async function marcarPerdido(
     return { ok: false, error: "El lead ya está marcado como perdido" };
   }
 
+  const user = await getCurrentUser();
   const supabase = await createClient();
   const fechaCierre = new Date().toISOString();
 
-  const { error: errLead } = await supabase
+  const { data: leadUpdated, error: errLead } = await supabase
     .from("leads")
     .update({
       estado: "perdido",
@@ -274,10 +303,16 @@ export async function marcarPerdido(
       fecha_cierre: fechaCierre,
       estado_oportunidad: null,
     })
-    .eq("id", input.leadId);
+    .eq("organizacion_id", user.organizacion_id)
+    .eq("id", input.leadId)
+    .select("id");
   if (errLead) return { ok: false, error: errLead.message };
+  if (!leadUpdated || leadUpdated.length === 0) {
+    return { ok: false, error: ERR_LEAD_NO_ACCESS };
+  }
 
   const { error: errContacto } = await supabase.from("contactos").insert({
+    organizacion_id: user.organizacion_id,
     lead_id: input.leadId,
     fecha: fechaCierre,
     canal: "cambio_estado",
@@ -322,12 +357,13 @@ export async function confirmarGanado(
     return { ok: false, error: "El lead ya está marcado como ganado" };
   }
 
+  const user = await getCurrentUser();
   const supabase = await createClient();
   // Tomamos la fecha del input + hora actual para tener un timestamptz estable
   // en ART (sino el ISO arranca a las 00:00 UTC y se ve como "ayer" en AR).
   const fechaIso = new Date(`${input.fecha_cierre}T12:00:00`).toISOString();
 
-  const { error: errLead } = await supabase
+  const { data: leadUpdated, error: errLead } = await supabase
     .from("leads")
     .update({
       estado: "ganado",
@@ -337,10 +373,16 @@ export async function confirmarGanado(
       comentario_cierre: input.comentario?.trim() || null,
       estado_oportunidad: null,
     })
-    .eq("id", input.leadId);
+    .eq("organizacion_id", user.organizacion_id)
+    .eq("id", input.leadId)
+    .select("id");
   if (errLead) return { ok: false, error: errLead.message };
+  if (!leadUpdated || leadUpdated.length === 0) {
+    return { ok: false, error: ERR_LEAD_NO_ACCESS };
+  }
 
   const { error: errContacto } = await supabase.from("contactos").insert({
+    organizacion_id: user.organizacion_id,
     lead_id: input.leadId,
     fecha: fechaIso,
     canal: "cambio_estado",
@@ -372,10 +414,11 @@ export async function reabrirLead(
     return { ok: false, error: "Solo se pueden reabrir leads ganados o perdidos" };
   }
 
+  const user = await getCurrentUser();
   const supabase = await createClient();
   // Volvemos a "conversacion" — un lead reabierto necesita seguimiento real,
   // no arranca de cero ni vuelve directo a la etapa terminal previa.
-  const { error: errLead } = await supabase
+  const { data: leadUpdated, error: errLead } = await supabase
     .from("leads")
     .update({
       estado: "conversacion",
@@ -386,10 +429,16 @@ export async function reabrirLead(
       valor_final: null,
       estado_oportunidad: "por_reactivar",
     })
-    .eq("id", input.leadId);
+    .eq("organizacion_id", user.organizacion_id)
+    .eq("id", input.leadId)
+    .select("id");
   if (errLead) return { ok: false, error: errLead.message };
+  if (!leadUpdated || leadUpdated.length === 0) {
+    return { ok: false, error: ERR_LEAD_NO_ACCESS };
+  }
 
   const { error: errContacto } = await supabase.from("contactos").insert({
+    organizacion_id: user.organizacion_id,
     lead_id: input.leadId,
     fecha: new Date().toISOString(),
     canal: "cambio_estado",

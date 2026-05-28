@@ -18,6 +18,7 @@ export async function marcarPatronResuelto(
       resuelto_en: new Date().toISOString(),
       resuelto_por: user.id,
     })
+    .eq("organizacion_id", user.organizacion_id)
     .eq("id", patronId)
     .is("resuelto_en", null);
   if (error) return { ok: false, error: error.message };
@@ -29,10 +30,12 @@ export async function marcarPatronResuelto(
 
 export async function reabrirPatron(patronId: string): Promise<ActionResult> {
   if (!patronId) return { ok: false, error: "Falta el patrón" };
+  const user = await getCurrentUser();
   const supabase = await createClient();
   const { error } = await supabase
     .from("patrones")
     .update({ resuelto_en: null, resuelto_por: null })
+    .eq("organizacion_id", user.organizacion_id)
     .eq("id", patronId);
   if (error) return { ok: false, error: error.message };
 
