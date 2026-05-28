@@ -6,6 +6,7 @@
  */
 
 import { NextResponse } from "next/server";
+import { DEMO_ORG_ID } from "@/lib/config";
 import { detectarPatrones } from "@/lib/patrones-detectores";
 import { resetAndSeed } from "@/lib/seed";
 
@@ -35,7 +36,8 @@ export async function GET(req: Request) {
     // Si fallan, no abortamos el reset: la pantalla /patrones los reintenta
     // on-demand cuando alguien entra.
     try {
-      await detectarPatrones();
+      // El cron solo opera sobre data demo, así que detectamos contra DEMO_ORG_ID.
+      await detectarPatrones(DEMO_ORG_ID);
     } catch (errInsights) {
       console.warn("[reset] detectarPatrones falló:", errInsights);
     }

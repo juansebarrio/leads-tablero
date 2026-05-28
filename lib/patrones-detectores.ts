@@ -7,6 +7,17 @@
 //    Si ya está resuelto, no se recrea (respeta la decisión manual).
 //  - On-demand: la pantalla /patrones llama detectarPatrones() antes de
 //    leer. También se corre al final del reset diario.
+//
+// Sprint 6.4: detectarPatrones(orgId) recibe el id de la org sobre la
+// que correr la detección. Caller cron pasa DEMO_ORG_ID; caller UI pasa
+// currentUser.organizacion_id. Todos los reads y upserts internos
+// filtran/setean organizacion_id.
+//
+// Caveat: clave_unica tiene UNIQUE constraint global. Si en el futuro
+// dos orgs corren detectores en paralelo, podrían colisionar. Hoy no
+// es problema (demo es la única org con datos), pero hay que cambiar
+// la unique key a (organizacion_id, clave_unica) cuando JS80 arranque
+// con datos reales. Sprint posterior.
 
 import { createClient } from "@/lib/supabase/server";
 import type { PatronTipo } from "@/lib/types";
@@ -60,10 +71,15 @@ type UpsertParams = {
 };
 
 // Upsert con regla: si el patrón está resuelto, no se recrea ni actualiza.
-async function upsertPatron(supabase: SupabaseClient, p: UpsertParams) {
+async function upsertPatron(
+  supabase: SupabaseClient,
+  orgId: string,
+  p: UpsertParams,
+) {
   const { data: existing, error: errSel } = await supabase
     .from("patrones")
     .select("id, resuelto_en")
+    .eq("organizacion_id", orgId)
     .eq("clave_unica", p.clave_unica)
     .maybeSingle();
   if (errSel) {
@@ -83,11 +99,13 @@ async function upsertPatron(supabase: SupabaseClient, p: UpsertParams) {
         accion_label: p.accion_label ?? null,
         accion_href: p.accion_href ?? null,
       })
+      .eq("organizacion_id", orgId)
       .eq("id", existing.id);
     if (error) console.warn(`[insights] update ${p.clave_unica}:`, error.message);
     return;
   }
   const { error } = await supabase.from("patrones").insert({
+    organizacion_id: orgId,
     clave_unica: p.clave_unica,
     tipo: p.tipo,
     titulo: p.titulo,
@@ -106,11 +124,13 @@ async function upsertPatron(supabase: SupabaseClient, p: UpsertParams) {
 // limpia. Los resueltos manualmente se respetan.
 async function dropSiSinSentido(
   supabase: SupabaseClient,
+  orgId: string,
   clave_unica: string,
 ) {
   await supabase
     .from("patrones")
     .delete()
+    .eq("organizacion_id", orgId)
     .eq("clave_unica", clave_unica)
     .is("resuelto_en", null);
 }
@@ -118,7 +138,7 @@ async function dropSiSinSentido(
 // ─── Detectores ──────────────────────────────────────────────────────────────
 
 // 1) OPERATIVO · leads del formulario web sin responsable hace +3 días.
-async function detectarLeadsSinAsignar(supabase: SupabaseClient) {
+async function detectarLeadsSinAsignar(supabase: SupabaseClient, orgId: string) {
   const clave = `operativo:leads_sin_asignar:${semanaISO()}`;
   const hace3 = new Date();
   hace3.setDate(hace3.getDate() - 3);
@@ -126,6 +146,7 @@ async function detectarLeadsSinAsignar(supabase: SupabaseClient) {
   const { data, error } = await supabase
     .from("leads")
     .select("id, nombre, valor_estimado, fecha_creacion")
+    .eq("organizacion_id", orgId)
     .eq("origen", "formulario")
     .is("responsable_id", null)
     .not("estado", "in", "(ganado,perdido)")
@@ -136,7 +157,7 @@ async function detectarLeadsSinAsignar(supabase: SupabaseClient) {
     return;
   }
   if (!data || data.length < 3) {
-    await dropSiSinSentido(supabase, clave);
+    await dropSiSinSentido(supabase, orgId, clave);
     return;
   }
   const ids = data.map((l) => l.id as string);
@@ -148,7 +169,7 @@ async function detectarLeadsSinAsignar(supabase: SupabaseClient) {
   const desde = fechas[0];
   const hasta = fechas[fechas.length - 1];
 
-  await upsertPatron(supabase, {
+  await upsertPatron(supabase, orgId, {
     clave_unica: clave,
     tipo: "operativo",
     titulo: `${data.length} leads del formulario web siguen <strong>sin asignar comercial</strong>`,
@@ -166,7 +187,7 @@ async function detectarLeadsSinAsignar(supabase: SupabaseClient) {
 }
 
 // 2) ATASCO · leads atascados +14 días en una etapa concreta.
-async function detectarAtascosEnEtapa(supabase: SupabaseClient) {
+async function detectarAtascosEnEtapa(supabase: SupabaseClient, orgId: string) {
   const etapas: { estado: string; label: string; promedio: number }[] = [
     { estado: "propuesta", label: "Propuesta", promedio: 6 },
     { estado: "cierre", label: "Cierre", promedio: 5 },
@@ -174,9 +195,11 @@ async function detectarAtascosEnEtapa(supabase: SupabaseClient) {
 
   for (const { estado, label, promedio } of etapas) {
     const clave = `atasco:${estado}:${semanaISO()}`;
+    // v_leads_kanban expone organizacion_id vía l.* (Sprint 1).
     const { data, error } = await supabase
       .from("v_leads_kanban")
       .select("id, nombre, valor_estimado, dias_en_estado")
+      .eq("organizacion_id", orgId)
       .eq("estado", estado)
       .gte("dias_en_estado", 14)
       .order("dias_en_estado", { ascending: false });
@@ -185,7 +208,7 @@ async function detectarAtascosEnEtapa(supabase: SupabaseClient) {
       continue;
     }
     if (!data || data.length < 3) {
-      await dropSiSinSentido(supabase, clave);
+      await dropSiSinSentido(supabase, orgId, clave);
       continue;
     }
     const ids = data.map((l) => l.id as string);
@@ -194,7 +217,7 @@ async function detectarAtascosEnEtapa(supabase: SupabaseClient) {
       0,
     );
 
-    await upsertPatron(supabase, {
+    await upsertPatron(supabase, orgId, {
       clave_unica: clave,
       tipo: "atasco",
       titulo: `${data.length} leads atascados hace <strong>+14 días en ${label}</strong>`,
@@ -216,7 +239,10 @@ async function detectarAtascosEnEtapa(supabase: SupabaseClient) {
 // cerró" (el seed no puebla fecha_cierre; ese campo solo se llena via
 // el drawer "Confirmar ganado"). Caemos a fecha_creacion si no hay
 // último contacto registrado.
-async function detectarMejorHorarioCierre(supabase: SupabaseClient) {
+async function detectarMejorHorarioCierre(
+  supabase: SupabaseClient,
+  orgId: string,
+) {
   const clave = `oportunidad:mejor_dia_cierre:${mesISO()}`;
   const hace90 = new Date();
   hace90.setDate(hace90.getDate() - 90);
@@ -224,6 +250,7 @@ async function detectarMejorHorarioCierre(supabase: SupabaseClient) {
   const { data, error } = await supabase
     .from("leads")
     .select("id, fecha_ultimo_contacto, fecha_creacion, estado")
+    .eq("organizacion_id", orgId)
     .eq("estado", "ganado")
     .gte("fecha_creacion", hace90.toISOString());
   if (error) {
@@ -231,7 +258,7 @@ async function detectarMejorHorarioCierre(supabase: SupabaseClient) {
     return;
   }
   if (!data || data.length < 5) {
-    await dropSiSinSentido(supabase, clave);
+    await dropSiSinSentido(supabase, orgId, clave);
     return;
   }
 
@@ -247,7 +274,7 @@ async function detectarMejorHorarioCierre(supabase: SupabaseClient) {
   }
   const total = cuentas.reduce((a, c) => a + c, 0);
   if (total < 5) {
-    await dropSiSinSentido(supabase, clave);
+    await dropSiSinSentido(supabase, orgId, clave);
     return;
   }
   // Mejor día = el con más ganados.
@@ -261,7 +288,7 @@ async function detectarMejorHorarioCierre(supabase: SupabaseClient) {
 
   // Umbral: el mejor día concentra al menos 30% de los cierres.
   if (ratioMejor < 0.3) {
-    await dropSiSinSentido(supabase, clave);
+    await dropSiSinSentido(supabase, orgId, clave);
     return;
   }
 
@@ -269,7 +296,7 @@ async function detectarMejorHorarioCierre(supabase: SupabaseClient) {
   const pctMejor = Math.round(ratioMejor * 100);
   const pctPromedio = Math.round(ratioPromedio * 100);
 
-  await upsertPatron(supabase, {
+  await upsertPatron(supabase, orgId, {
     clave_unica: clave,
     tipo: "oportunidad",
     titulo: `Tu mejor día para cerrar es el <strong>${labelMejor.toLowerCase()}</strong>`,
@@ -295,7 +322,12 @@ async function detectarMejorHorarioCierre(supabase: SupabaseClient) {
 }
 
 // 4) TENDENCIA · creaste más leads pero el ratio no se movió.
-async function detectarCambioRatio(supabase: SupabaseClient) {
+// La RPC funnel_para_mes no toma org_id (Grupo B en la auditoría de 6.2);
+// confía en RLS + security_invoker para devolver solo data de la org del
+// caller. En contexto cron (service_role bypassa RLS) puede ver todo,
+// pero como solo demo tiene datos hoy, no es problema. Si JS80 arranca
+// con producción, el cron debería pasar por un cliente con sesión de demo.
+async function detectarCambioRatio(supabase: SupabaseClient, orgId: string) {
   const clave = `tendencia:cambio_ratio:${mesISO()}`;
 
   const [actualRes, anteriorRes] = await Promise.all([
@@ -317,7 +349,7 @@ async function detectarCambioRatio(supabase: SupabaseClient) {
   const ganadosB = Number(anterior?.ganados) || 0;
 
   if (creadosB === 0 || creadosA === 0) {
-    await dropSiSinSentido(supabase, clave);
+    await dropSiSinSentido(supabase, orgId, clave);
     return;
   }
   const ratioA = (ganadosA / creadosA) * 100;
@@ -327,11 +359,11 @@ async function detectarCambioRatio(supabase: SupabaseClient) {
 
   // Patrón: leads creados subió +10% pero ratio quedó plano o bajó.
   if (cambioCreados < 10 || cambioRatio > 1) {
-    await dropSiSinSentido(supabase, clave);
+    await dropSiSinSentido(supabase, orgId, clave);
     return;
   }
 
-  await upsertPatron(supabase, {
+  await upsertPatron(supabase, orgId, {
     clave_unica: clave,
     tipo: "tendencia",
     titulo: `Creaste <strong>+${Math.round(cambioCreados)}% leads</strong> este mes pero <strong>el ratio de cierre no acompañó</strong>`,
@@ -351,7 +383,12 @@ async function detectarCambioRatio(supabase: SupabaseClient) {
 
 // 5) SUGERENCIA · un comercial está sobrecargado y otro tiene capacidad
 // con mejor ratio.
-async function detectarDesbalanceEquipo(supabase: SupabaseClient) {
+// v_comerciales_metricas NO expone organizacion_id (Grupo B en la auditoría
+// de 6.2). Confiamos en RLS + security_invoker para acotar a la org del caller.
+async function detectarDesbalanceEquipo(
+  supabase: SupabaseClient,
+  orgId: string,
+) {
   const clave = `sugerencia:desbalance_equipo:${semanaISO()}`;
 
   const { data, error } = await supabase
@@ -362,7 +399,7 @@ async function detectarDesbalanceEquipo(supabase: SupabaseClient) {
     return;
   }
   if (!data || data.length < 2) {
-    await dropSiSinSentido(supabase, clave);
+    await dropSiSinSentido(supabase, orgId, clave);
     return;
   }
   const comerciales = (data as {
@@ -387,14 +424,14 @@ async function detectarDesbalanceEquipo(supabase: SupabaseClient) {
     masCargado.leads_activos < menosCargado.leads_activos * 2 ||
     menosCargado.ratio_cierre <= masCargado.ratio_cierre
   ) {
-    await dropSiSinSentido(supabase, clave);
+    await dropSiSinSentido(supabase, orgId, clave);
     return;
   }
 
   const nombreMenos = menosCargado.nombre.split(" ")[0];
   const nombreMas = masCargado.nombre.split(" ")[0];
 
-  await upsertPatron(supabase, {
+  await upsertPatron(supabase, orgId, {
     clave_unica: clave,
     tipo: "sugerencia",
     titulo: `<strong>${nombreMenos} tiene capacidad</strong> y mejor ratio del mes. Considerá reasignarle 2–3 leads`,
@@ -414,13 +451,13 @@ async function detectarDesbalanceEquipo(supabase: SupabaseClient) {
 
 // ─── Entry point ─────────────────────────────────────────────────────────────
 
-export async function detectarPatrones() {
+export async function detectarPatrones(orgId: string) {
   const supabase = await createClient();
   await Promise.all([
-    detectarLeadsSinAsignar(supabase),
-    detectarAtascosEnEtapa(supabase),
-    detectarMejorHorarioCierre(supabase),
-    detectarCambioRatio(supabase),
-    detectarDesbalanceEquipo(supabase),
+    detectarLeadsSinAsignar(supabase, orgId),
+    detectarAtascosEnEtapa(supabase, orgId),
+    detectarMejorHorarioCierre(supabase, orgId),
+    detectarCambioRatio(supabase, orgId),
+    detectarDesbalanceEquipo(supabase, orgId),
   ]);
 }

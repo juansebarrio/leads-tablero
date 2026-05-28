@@ -27,10 +27,14 @@ const TIPOS: PatronTipo[] = [
 ];
 
 export default async function PatronesPage() {
-  // Detección on-demand al entrar. Si falla algún detector, queda logueado
-  // y seguimos: la pantalla muestra lo que haya en la tabla.
+  // Detección on-demand al entrar. Necesitamos el orgId del usuario para
+  // acotarla a su organización; getCurrentUser está cacheado con
+  // React.cache, así que esta llamada se reusa en el Promise.all abajo.
+  // Si falla algún detector, queda logueado y seguimos: la pantalla
+  // muestra lo que haya en la tabla.
   try {
-    await detectarPatrones();
+    const userParaDeteccion = await getCurrentUser();
+    await detectarPatrones(userParaDeteccion.organizacion_id);
   } catch (err) {
     console.warn("[patrones] detectarPatrones falló:", err);
   }
