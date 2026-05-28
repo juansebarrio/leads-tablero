@@ -1,55 +1,155 @@
 /**
  * Abstracción del "usuario actual" del producto.
  *
- * Hoy (demo pública sin login): devuelve siempre Mariana López, el comercial
- * que está sembrado por `lib/seed.ts`.
+ * Tiene dos modos según NEXT_PUBLIC_APP_MODE:
  *
- * Cuando migremos a producción real con Supabase Auth, esta función va a leer
- * la sesión del usuario logueado. La idea es que ningún archivo de la app
- * importe "Mariana" ni se conecte directo a la tabla de comerciales: todo
- * pasa por acá.
+ *  - demo (default, leads.js80.studio): devuelve siempre Mariana López.
+ *    Lookup runtime por email contra `comerciales` — los IDs no son
+ *    estables entre `db:reset` (gen_random_uuid), por eso no podemos
+ *    hardcodearlos.
+ *
+ *  - production (futuro crm.js80.studio): lee la sesión real de
+ *    Supabase Auth y joinea contra `usuarios_organizaciones`. Sprint 3
+ *    deja el branch escrito pero no se activa todavía (no hay flujo
+ *    de login ni middleware aún — eso es Sprint 4 / 5).
+ *
+ * Convención: ningún archivo de la app importa "Mariana" ni habla
+ * directo con `comerciales` para el usuario actual — todo pasa por acá.
  */
 
+import { DEMO_ORG_ID, isDemoMode } from "@/lib/config";
 import { createClient } from "@/lib/supabase/server";
 import type { Comercial } from "@/lib/types";
 
 export type CurrentUser = {
+  // En demo: id del comercial (igual que comercial_id).
+  // En production: id de auth.users — distinto de comercial_id (puede ser null
+  // hasta Sprint 8 que vincule auth.users ↔ comerciales).
   id: string;
+  email: string;
   nombre: string;
   iniciales: string;
-  email: string;
   avatar_gradient: string;
-  rol: "comercial" | "admin";
+  organizacion_id: string;
+  organizacion_slug: string;
+  rol: "owner" | "admin" | "comercial" | "lector";
+  comercial_id: string | null;
 };
 
 const DEMO_EMAIL = "mariana@js80.studio";
 
-export async function getCurrentUser(): Promise<CurrentUser> {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("comerciales")
-    .select("*")
-    .eq("email", DEMO_EMAIL)
-    .single<Comercial>();
+// Pool de gradients para usuarios production sin avatar asignado. Sprint 8
+// va a hidratar el avatar real desde la membership; hasta entonces, se
+// elige determinísticamente por hash del email.
+const FALLBACK_GRADIENTS = [
+  "linear-gradient(135deg, #8B6FFF, #5DC7E0)",
+  "linear-gradient(135deg, #FF8AA0, #FFB088)",
+  "linear-gradient(135deg, #6BCB77, #4D96FF)",
+  "linear-gradient(135deg, #F9A826, #FFE066)",
+];
 
-  if (error || !data) {
-    throw new Error(
-      `Comercial demo no encontrado en la base (email=${DEMO_EMAIL}). ¿Corriste el seed?`,
-    );
+function inicialesDe(nombre: string): string {
+  const partes = nombre.trim().split(/\s+/).filter(Boolean);
+  if (partes.length === 0) return "??";
+  if (partes.length === 1) return partes[0].slice(0, 2).toUpperCase();
+  return (partes[0][0] + partes[partes.length - 1][0]).toUpperCase();
+}
+
+function gradientPorEmail(email: string): string {
+  let hash = 0;
+  for (let i = 0; i < email.length; i++) {
+    hash = (hash * 31 + email.charCodeAt(i)) | 0;
+  }
+  return FALLBACK_GRADIENTS[Math.abs(hash) % FALLBACK_GRADIENTS.length];
+}
+
+export async function getCurrentUser(): Promise<CurrentUser> {
+  // ─── MODO DEMO: lookup runtime de Mariana (mismo comportamiento de Sprint 0) ───
+  if (isDemoMode) {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("comerciales")
+      .select("*")
+      .eq("email", DEMO_EMAIL)
+      .single<Comercial>();
+
+    if (error || !data) {
+      throw new Error(
+        `Comercial demo no encontrado en la base (email=${DEMO_EMAIL}). ¿Corriste el seed?`,
+      );
+    }
+
+    return {
+      id: data.id,
+      email: data.email,
+      nombre: data.nombre,
+      iniciales: data.iniciales,
+      avatar_gradient: data.avatar_gradient,
+      organizacion_id: DEMO_ORG_ID,
+      organizacion_slug: "demo",
+      rol: "comercial",
+      comercial_id: data.id,
+    };
   }
 
+  // ─── MODO PRODUCTION: sesión real de Supabase Auth ───
+  // OJO: Sprint 3 deja este branch escrito pero el flujo no está activo
+  // todavía. /login, /auth/callback y el middleware llegan en Sprint 4 y 5.
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error("No autenticado");
+  }
+
+  const { data: membership, error: membershipError } = await supabase
+    .from("usuarios_organizaciones")
+    .select(
+      `
+        rol,
+        organizacion:organizaciones (id, slug, nombre)
+      `,
+    )
+    .eq("usuario_id", user.id)
+    .limit(1)
+    .single();
+
+  if (membershipError || !membership) {
+    throw new Error("Usuario sin organización asignada");
+  }
+
+  // Cast a través de unknown para evitar el ruido del tipo inferido del join
+  // de Supabase (el cliente no sabe si organizacion es objeto o array).
+  const org = (membership as unknown as {
+    rol: CurrentUser["rol"];
+    organizacion: { id: string; slug: string; nombre: string };
+  });
+
+  const nombre =
+    (user.user_metadata?.full_name as string | undefined) ||
+    user.email!.split("@")[0];
+
+  // comerciales.usuario_id se agrega en Sprint 8 — hasta entonces, en
+  // production no podemos hidratar comercial_id desde la membership.
   return {
-    id: data.id,
-    nombre: data.nombre,
-    iniciales: data.iniciales,
-    email: data.email,
-    avatar_gradient: data.avatar_gradient,
-    rol: "comercial",
+    id: user.id,
+    email: user.email!,
+    nombre,
+    iniciales: inicialesDe(nombre),
+    avatar_gradient: gradientPorEmail(user.email!),
+    organizacion_id: org.organizacion.id,
+    organizacion_slug: org.organizacion.slug,
+    rol: org.rol,
+    comercial_id: null,
   };
 }
 
-// Placeholder. Cuando sumemos multi-tenant, esto se va a derivar del usuario
-// actual (organización a la que pertenece).
+// Helper público — devuelve el org id del usuario actual. Se conserva por
+// compatibilidad con código viejo (no se usa todavía en la app, pero la
+// firma se mantiene). Internamente apoya en getCurrentUser().
 export async function getCurrentOrgId(): Promise<string> {
-  return "demo-org";
+  const user = await getCurrentUser();
+  return user.organizacion_id;
 }
