@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { Fraunces, Inter } from "next/font/google";
-import Script from "next/script";
 import { Toaster } from "sonner";
 import { DemoBanner } from "@/components/DemoBanner";
 import { GlobalShortcuts } from "@/components/GlobalShortcuts";
@@ -57,14 +56,15 @@ export default function RootLayout({
     <html lang="es" className={`${fraunces.variable} ${inter.variable}`}>
       <head>
         {/* Privacy-friendly analytics by Plausible */}
-        <Script
-          defer
+        <script
+          async
           src="https://plausible.io/js/pa-vuumWf1CJIOEItX8OhmE7.js"
-          strategy="afterInteractive"
         />
-        <Script id="plausible-init" strategy="afterInteractive">
-          {`window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};plausible.init()`}
-        </Script>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};plausible.init()`,
+          }}
+        />
       </head>
       <body>
         <GlobalShortcuts />
