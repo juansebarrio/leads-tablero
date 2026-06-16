@@ -71,14 +71,24 @@ export function PipelineBoard({
     }),
   );
 
+  // Estados que efectivamente se muestran como columnas del kanban.
+  // Cualquier lead con estado distinto (ej: 'perdido') queda fuera del board
+  // y por lo tanto fuera de los totales del header — si no, el header dice
+  // un número que el usuario no puede contar en pantalla.
+  const ESTADOS_VISIBLES = useMemo(
+    () => new Set<Estado>(ORDEN.map((o) => o.estado)),
+    [],
+  );
+
   // Filtro aplicado.
   const visibleLeads = useMemo(() => {
-    if (filtro.tipo === "todos") return leads;
+    const base = leads.filter((l) => ESTADOS_VISIBLES.has(l.estado));
+    if (filtro.tipo === "todos") return base;
     if (filtro.tipo === "sin_asignar") {
-      return leads.filter((l) => !l.responsable_id);
+      return base.filter((l) => !l.responsable_id);
     }
-    return leads.filter((l) => l.responsable_id === filtro.id);
-  }, [leads, filtro]);
+    return base.filter((l) => l.responsable_id === filtro.id);
+  }, [leads, filtro, ESTADOS_VISIBLES]);
 
   const leadsPorEstado = useMemo(() => {
     const map = new Map<Estado, LeadKanban[]>();
@@ -91,6 +101,8 @@ export function PipelineBoard({
 
   const activeLead = activeId ? leads.find((l) => l.id === activeId) : null;
 
+  // "Oportunidades activas" = lo que sigue sin cerrar; ganado ya fue cobrado
+  // y no es una oportunidad en juego.
   const totalActivo = visibleLeads
     .filter((l) => l.estado !== "ganado")
     .reduce((acc, l) => acc + l.valor_estimado, 0);

@@ -1,4 +1,5 @@
 import { ChevronDown, ChevronUp } from "lucide-react";
+import { KPITooltip } from "@/components/KPITooltip";
 
 interface KpiCardProps {
   label: string;
@@ -9,11 +10,19 @@ interface KpiCardProps {
     direction: "up" | "down" | "neutral";
   } | null;
   sub?: string; // ej: "vs abril (67)"
+  // Tooltip "?" arriba a la derecha. Sirve para aclarar criterio cuando dos
+  // vistas miden cosas parecidas con definiciones distintas.
+  tooltip?: string;
 }
 
-export function KpiCard({ label, value, delta, sub }: KpiCardProps) {
+export function KpiCard({ label, value, delta, sub, tooltip }: KpiCardProps) {
   return (
-    <div className="bg-panel border border-line rounded-[10px] p-5 md:p-[18px] xl:p-[20px] xl:px-[22px]">
+    <div className="relative bg-panel border border-line rounded-[10px] p-5 md:p-[18px] xl:p-[20px] xl:px-[22px]">
+      {tooltip && (
+        <div className="absolute top-2.5 right-3">
+          <KPITooltip text={tooltip} />
+        </div>
+      )}
       <div className="text-[10.5px] text-muted font-semibold tracking-[0.05em] uppercase mb-2.5">
         {label}
       </div>

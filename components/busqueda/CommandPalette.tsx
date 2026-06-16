@@ -253,7 +253,7 @@ export function CommandPalette() {
             <EmptyResults query={debouncedQuery} onClose={close} />
           ) : items.length === 0 ? (
             <div className="px-6 py-10 text-center text-muted text-[13px]">
-              Cargando…
+              Buscando…
             </div>
           ) : (
             <ItemsRenderer

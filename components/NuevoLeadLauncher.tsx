@@ -49,7 +49,8 @@ function Form({ open, onClose }: { open: boolean; onClose: () => void }) {
   const router = useRouter();
   const [nombre, setNombre] = useState("");
   const [origen, setOrigen] = useState<Origen>("formulario");
-  const [error, setError] = useState<string | null>(null);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [serverError, setServerError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
   // Reset cada vez que se reabre el drawer.
@@ -57,18 +58,27 @@ function Form({ open, onClose }: { open: boolean; onClose: () => void }) {
     if (open) {
       setNombre("");
       setOrigen("formulario");
-      setError(null);
+      setErrors({});
+      setServerError(null);
     }
   }, [open]);
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
+    setServerError(null);
+
+    const newErrors: Record<string, string> = {};
+    if (!nombre.trim()) newErrors.nombre = "Ponele un nombre al lead";
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+    setErrors({});
 
     startTransition(async () => {
       const res = await crearLead({ nombre, origen });
       if (!res.ok) {
-        setError(res.error);
+        setServerError(res.error);
         return;
       }
       onClose();
@@ -119,9 +129,9 @@ function Form({ open, onClose }: { open: boolean; onClose: () => void }) {
           </>
         }
       >
-        {error && (
+        {serverError && (
           <div className="bg-rojo-soft border border-rojo/20 text-rojo text-[12.5px] rounded-md px-3 py-2">
-            {error}
+            {serverError}
           </div>
         )}
 
@@ -135,14 +145,32 @@ function Form({ open, onClose }: { open: boolean; onClose: () => void }) {
           <input
             type="text"
             value={nombre}
-            onChange={(e) => setNombre(e.target.value)}
+            onChange={(e) => {
+              setNombre(e.target.value);
+              if (errors.nombre) setErrors((prev) => ({ ...prev, nombre: "" }));
+            }}
             required
             minLength={1}
             maxLength={200}
             autoFocus
             placeholder="Ej: Constructora Aliaga"
-            className="bg-panel border border-line rounded-md px-3 py-2.5 font-body text-[13.5px] text-ink w-full focus:outline-none focus:border-violeta focus:shadow-[0_0_0_3px_var(--color-violeta-soft)] placeholder:text-muted-2"
+            aria-invalid={!!errors.nombre}
+            aria-describedby={errors.nombre ? "nombre-error" : undefined}
+            className={`bg-panel border rounded-md px-3 py-2.5 font-body text-[13.5px] text-ink w-full focus:outline-none focus:shadow-[0_0_0_3px_var(--color-violeta-soft)] placeholder:text-muted-2 ${
+              errors.nombre
+                ? "border-rojo focus:border-rojo focus:shadow-[0_0_0_3px_var(--color-rojo-soft)]"
+                : "border-line focus:border-violeta"
+            }`}
           />
+          {errors.nombre && (
+            <p
+              id="nombre-error"
+              role="alert"
+              className="text-[12px] text-rojo mt-1"
+            >
+              {errors.nombre}
+            </p>
+          )}
         </div>
 
         <div className="flex flex-col gap-1.5">
@@ -157,6 +185,7 @@ function Form({ open, onClose }: { open: boolean; onClose: () => void }) {
                   key={o.value}
                   type="button"
                   onClick={() => setOrigen(o.value)}
+                  aria-pressed={selected}
                   className={`
                     px-3.5 py-1.5 rounded-full font-medium text-[12.5px] cursor-pointer border transition
                     ${selected ? "bg-ink text-white border-ink" : "bg-panel text-ink-2 border-line hover:border-ink-2"}
